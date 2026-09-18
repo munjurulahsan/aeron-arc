@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+@theme static {
+  --color-ink: #080808;
+  --color-bone: #f4f3ef;
+  --color-mute: #8c8b88;
+  --color-dim: #5c5b58;
+  --color-accent: #d8ff3e;
+  --color-line: rgba(244, 243, 239, 0.12);
+  --spacing-gutter: clamp(16px, 4vw, 56px);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: #080808;
+    color: #f4f3ef;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    cursor: default;
+  }
+  ::selection {
+    background: #d8ff3e;
+    color: #080808;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
