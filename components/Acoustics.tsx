@@ -1,39 +1,78 @@
 "use client";
 
+const systems = [
+  {
+    id: "01",
+    title: "Adaptive ANC",
+    desc: "Reads the room 200 times a second and cancels only what you don't want.",
+  },
+  {
+    id: "02",
+    title: "Real-time EQ",
+    desc: "Compensates for seal, ear geometry and volume, continuously.",
+  },
+  {
+    id: "03",
+    title: "Voice detection",
+    desc: "Start speaking and the world fades back in. Stop, and it recedes.",
+  },
+  {
+    id: "04",
+    title: "Spatial tracking",
+    desc: "Anchors the soundstage to the room, not to your head.",
+  },
+];
+
 export function Acoustics() {
   return (
     <section
       data-theme="dark"
-      className="relative bg-[#080808] px-gutter py-[clamp(90px,14vh,180px)] text-[#F4F3EF]"
+      className="relative bg-[#080808] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#F4F3EF]"
     >
-      <div className="mx-auto max-w-[1560px]">
-        <span className="font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
-          08 INTELLIGENCE
-        </span>
-        <h2 className="mt-4 font-sans text-[clamp(36px,5.6vw,84px)] font-black tracking-[-0.03em] leading-[0.92] uppercase">
-          It listens <br />
-          <span className="font-serif font-light italic">with you.</span>
-        </h2>
-        <p className="mt-6 max-w-[48ch] font-mono text-sm leading-relaxed text-mute">
-          Four acoustic systems running quietly in the background, adjusting the sound before you notice it needed adjusting.
-        </p>
+      <div className="mx-auto max-w-[1424px]">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-3.5">
+          <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
+            08
+          </span>
+          <div className="h-px w-[54px] bg-[#B9BCC0]/40" />
+          <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#B9BCC0]">
+            INTELLIGENCE
+          </span>
+        </div>
 
-        <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div className="border-t border-line pt-6">
-            <span className="font-mono text-xs text-[#D8FF3E]">01 / ADAPTIVE ANC</span>
-            <h3 className="mt-2 text-xl font-bold">Reads the room 200× a second</h3>
-            <p className="mt-2 font-mono text-xs text-dim">
-              Adjusts anti-noise wave phase in real time to cancel subway rumble or coffee shop clatter.
+        {/* Header Row */}
+        <div className="mt-8 grid grid-cols-1 items-end gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <h2 className="font-sans text-[clamp(44px,6.25vw,96px)] font-[800] leading-[1.05] tracking-[-0.055em] text-[#F4F3EF]">
+              It listens with you.
+            </h2>
+          </div>
+          <div className="lg:col-span-5 lg:pb-3 lg:pl-8">
+            <p className="max-w-[340px] font-sans text-[14px] leading-[1.7] text-[#B9BCC0]">
+              Four systems running quietly in the background, adjusting the sound before you notice it needed adjusting.
             </p>
           </div>
+        </div>
 
-          <div className="border-t border-line pt-6">
-            <span className="font-mono text-xs text-[#D8FF3E]">02 / SPATIAL TRANSPARENCY</span>
-            <h3 className="mt-2 text-xl font-bold">Bypass with natural stereo phase</h3>
-            <p className="mt-2 font-mono text-xs text-dim">
-              External microphones funnel outside voices into your ears with natural directional timing.
-            </p>
-          </div>
+        {/* 4 Systems Rows */}
+        <div className="mt-14 border-t border-white/10">
+          {systems.map((s) => (
+            <div
+              key={s.id}
+              className="grid grid-cols-1 items-center gap-3 border-b border-white/10 py-7 transition-colors hover:bg-white/[0.02] md:grid-cols-12"
+            >
+              <div className="font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E] md:col-span-1">
+                {s.id}
+              </div>
+              <div className="font-sans text-[clamp(22px,2.2vw,32px)] font-[700] tracking-[-0.02em] text-[#F4F3EF] md:col-span-5">
+                {s.title}
+              </div>
+              <div className="font-sans text-[12.5px] leading-[1.7] text-[#B9BCC0]/85 md:col-span-6">
+                {s.desc}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

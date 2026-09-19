@@ -2,9 +2,11 @@
 @import "lenis/dist/lenis.css";
 
 @theme static {
+  --font-sans: var(--font-archivo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "SF Mono", Menlo, Consolas, monospace;
   --color-ink: #080808;
   --color-bone: #f4f3ef;
-  --color-mute: #8c8b88;
+  --color-mute: #b9bcc0;
   --color-dim: #5c5b58;
   --color-accent: #d8ff3e;
   --color-line: rgba(244, 243, 239, 0.12);
@@ -19,7 +21,6 @@
   body {
     background: #080808;
     color: #f4f3ef;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     cursor: default;
@@ -28,6 +29,34 @@
     background: #d8ff3e;
     color: #080808;
   }
+}
+
+@keyframes aeronPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+}
+
+.animate-aeron-pulse {
+  animation: aeronPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes aeronFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.6deg);
+  }
+}
+
+.animate-aeron-float {
+  animation: aeronFloat 5s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

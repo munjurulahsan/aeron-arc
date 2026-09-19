@@ -14,7 +14,7 @@ export function Battery() {
       const vh = window.innerHeight;
       const r = el.getBoundingClientRect();
       const p = Math.min(Math.max((vh * 0.85 - r.top) / (vh * 0.5), 0), 1);
-      bar.style.width = `${(8 + p * 92).toFixed(1)}%`;
+      bar.style.width = `${(10 + p * 90).toFixed(1)}%`;
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -25,46 +25,89 @@ export function Battery() {
   return (
     <section
       data-theme="light"
-      className="relative bg-[#F4F3EF] px-gutter py-[clamp(90px,14vh,180px)] text-[#080808]"
+      className="relative bg-[#F4F3EF] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#080808]"
     >
-      <div ref={containerRef} className="mx-auto max-w-[1560px]">
-        <span className="font-mono text-[11px] tracking-[0.24em] text-[#080808]/60 uppercase">
-          07 POWER
-        </span>
-        <h2 className="mt-4 font-sans text-[clamp(36px,5.6vw,84px)] font-black tracking-[-0.03em] leading-[0.92] uppercase">
-          Power that stays <br />
-          <span className="font-serif font-light italic text-[#080808]/70">with you.</span>
-        </h2>
-        <p className="mt-6 max-w-[48ch] font-mono text-sm leading-relaxed text-[#080808]/70">
-          Designed for long days, late nights, and everything between.
-        </p>
+      <div ref={containerRef} className="mx-auto max-w-[1424px]">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* Left Column */}
+          <div className="lg:col-span-7">
+            {/* Eyebrow */}
+            <div className="flex items-center gap-3.5">
+              <span className="rounded bg-[#080808] px-1.5 py-0.5 font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
+                07
+              </span>
+              <div className="h-px w-[54px] bg-[#080808]/20" />
+              <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#5B5B58]">
+                POWER
+              </span>
+            </div>
 
-        <div className="mt-14 overflow-hidden rounded-2xl border border-black/10 bg-black/5 p-8">
-          <div className="flex justify-between font-mono text-xs font-bold tracking-widest text-[#080808]">
-            <span>BATTERY CELL ACTIVE</span>
-            <span>32H TOTAL PLAYBACK</span>
+            {/* Heading */}
+            <h2 className="mt-6 font-sans text-[clamp(44px,5.6vw,86px)] font-[800] leading-[1.05] tracking-[-0.06em] text-[#080808]">
+              Power that stays with you.
+            </h2>
+
+            {/* Paragraph */}
+            <p className="mt-6 max-w-[380px] font-sans text-[14px] leading-[1.7] text-[#4A4A47]">
+              Designed for long days, late nights and everything between.
+            </p>
+
+            {/* Stat Cards */}
+            <div className="mt-10 grid grid-cols-1 border border-[#080808]/15 bg-[#F4F3EF] sm:grid-cols-3 sm:divide-x divide-y sm:divide-y-0 divide-[#080808]/15">
+              <div className="p-6">
+                <div className="font-sans text-[clamp(36px,3.5vw,54.4px)] font-[800] leading-none tracking-[-0.04em] text-[#080808]">
+                  32H
+                </div>
+                <div className="mt-2.5 font-mono text-[10px] tracking-[0.18em] text-[#5B5B58]">
+                  TOTAL LISTENING
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="font-sans text-[clamp(36px,3.5vw,54.4px)] font-[800] leading-none tracking-[-0.04em] text-[#080808]">
+                  8H
+                </div>
+                <div className="mt-2.5 font-mono text-[10px] tracking-[0.18em] text-[#5B5B58]">
+                  SINGLE CHARGE
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="font-sans text-[clamp(36px,3.5vw,54.4px)] font-[800] leading-none tracking-[-0.04em] text-[#080808]">
+                  15 MIN
+                </div>
+                <div className="mt-2.5 font-mono text-[10px] tracking-[0.18em] text-[#5B5B58]">
+                  = 3H PLAYBACK
+                </div>
+              </div>
+            </div>
+
+            {/* Battery Tracker Bar */}
+            <div className="mt-8">
+              <div className="h-[3px] w-full overflow-hidden bg-[#080808]/12">
+                <div
+                  ref={barRef}
+                  data-battery-bar
+                  className="h-full bg-[#080808] transition-[width] duration-300"
+                  style={{ width: "15%" }}
+                />
+              </div>
+              <div className="mt-3 flex justify-between font-mono text-[10px] tracking-[0.18em] text-[#5B5B58]">
+                <span>00H</span>
+                <span>16H</span>
+                <span>32H</span>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-6 h-4 w-full overflow-hidden rounded-full bg-black/10">
-            <div
-              ref={barRef}
-              data-battery-bar
-              className="h-full w-[8%] rounded-full bg-[#080808] transition-[width] duration-300"
-            />
-          </div>
-
-          <div className="mt-8 grid grid-cols-3 gap-6 border-t border-black/10 pt-6 font-mono text-xs">
-            <div>
-              <span className="text-black/50">SINGLE CHARGE</span>
-              <p className="mt-1 text-base font-bold">8 HOURS</p>
-            </div>
-            <div>
-              <span className="text-black/50">WITH POD</span>
-              <p className="mt-1 text-base font-bold">32 HOURS</p>
-            </div>
-            <div>
-              <span className="text-black/50">FAST CHARGE</span>
-              <p className="mt-1 text-base font-bold">15 MIN = 3H</p>
+          {/* Right Column: Charging Pod Image from Figma */}
+          <div className="flex items-center justify-center lg:col-span-5 lg:justify-end">
+            <div className="relative aspect-[492/590] w-full max-w-[492px]">
+              <img
+                src="/assets/charging-pod-open.png"
+                alt="AERON ARC charging pod, open"
+                className="h-full w-full object-contain filter drop-shadow-[0_24px_48px_rgba(0,0,0,0.18)] transition-transform duration-700 ease-out hover:scale-[1.02]"
+              />
             </div>
           </div>
         </div>

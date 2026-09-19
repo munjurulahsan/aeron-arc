@@ -5,10 +5,12 @@ import { useEffect, useRef } from "react";
 export function Technology() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const host = containerRef.current;
+    const bg = bgRef.current;
     if (!canvas || !host) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -21,6 +23,7 @@ export function Technology() {
     let raf: number;
 
     const onResize = () => {
+      if (!canvas || !host) return;
       cw = canvas.width = host.offsetWidth;
       ch = canvas.height = host.offsetHeight;
     };
@@ -29,6 +32,13 @@ export function Technology() {
     const onMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX / window.innerWidth;
       mouse.y = e.clientY / window.innerHeight;
+
+      // Smooth subtle parallax on the Figma hero background image
+      if (bg) {
+        const dx = (e.clientX / window.innerWidth - 0.5) * 14;
+        const dy = (e.clientY / window.innerHeight - 0.5) * 10;
+        bg.style.transform = `scale(1.05) translate3d(${dx}px, ${dy}px, 0)`;
+      }
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
@@ -41,8 +51,8 @@ export function Technology() {
         fieldScale += (0.62 + sp * 0.55 - fieldScale) * 0.06;
         ctx.clearRect(0, 0, cw, ch);
 
-        const cx2 = cw / 2 + (mouse.x - 0.5) * cw * 0.1;
-        const cy2 = ch / 2 + (mouse.y - 0.5) * ch * 0.08;
+        const cx2 = cw / 2 + (mouse.x - 0.5) * cw * 0.12;
+        const cy2 = ch / 2 + (mouse.y - 0.5) * ch * 0.09;
         const tilt = 0.3 + (mouse.y - 0.5) * 0.2;
         const rings = 26;
 
@@ -59,9 +69,9 @@ export function Technology() {
             else ctx.lineTo(px, py);
           }
           ctx.closePath();
-          const fade = (1 - k) * 0.35;
+          const fade = (1 - k) * 0.25;
           if (i === 6) {
-            ctx.globalAlpha = Math.min(1, fade * 1.6);
+            ctx.globalAlpha = Math.min(1, fade * 1.8);
             ctx.strokeStyle = "#D8FF3E";
             ctx.lineWidth = 1.4;
           } else {
@@ -89,30 +99,66 @@ export function Technology() {
     <section
       id="technology"
       data-theme="dark"
-      className="relative min-h-[clamp(620px,105svh,1080px)] overflow-hidden bg-[#080808] px-gutter py-[clamp(90px,14vh,180px)] text-[#F4F3EF]"
+      ref={containerRef}
+      className="relative h-[712px] min-h-[640px] xl:h-[712px] overflow-hidden bg-[#080808] px-gutter py-[clamp(48px,8vh,84px)] text-[#F4F3EF]"
     >
-      <div
-        ref={containerRef}
-        className="relative mx-auto flex min-h-[clamp(500px,80vh,800px)] max-w-[1560px] flex-col justify-between"
-      >
-        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
+      {/* Figma Exact Background Image (Node 1:265) */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <img
+          ref={bgRef}
+          src="/assets/spatial-engine-bg.png"
+          alt="AERON ARC Spatial Engine"
+          className="h-full w-full object-cover object-center scale-105 transition-transform duration-300 ease-out"
+        />
+        {/* Subtle Vignette Overlays matching Figma */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-transparent to-[#080808]/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#080808]/70 via-transparent to-[#080808]/70" />
+      </div>
 
-        <div className="relative z-10 max-w-[580px]">
-          <span className="font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
-            04 SPATIAL ENGINE
-          </span>
-          <h2 className="mt-4 font-sans text-[clamp(36px,5.6vw,84px)] font-extrabold tracking-[-0.03em] leading-[0.94] uppercase">
-            Sound without <br />
-            <span className="font-serif font-light italic">direction.</span>
-          </h2>
-          <p className="mt-6 font-mono text-sm leading-relaxed text-mute">
-            AERON ARC creates a dimensional soundstage that responds naturally to your head movement. Turn your head and the room stays where it is.
-          </p>
+      {/* Interactive Sound-Wave Canvas Layer */}
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 z-[1] h-full w-full opacity-60 mix-blend-screen"
+      />
+
+      {/* Content Container (Figma Node 1:266) */}
+      <div className="relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between">
+        {/* Top Block: Eyebrow + 3-line Stacked Headline */}
+        <div>
+          {/* Eyebrow Meta: 04 —— SPATIAL ENGINE */}
+          <div className="flex items-center gap-[14px]">
+            <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
+              04
+            </span>
+            <span className="h-[1px] w-[54px] bg-[#B9BCC0]/40" />
+            <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#B9BCC0] uppercase">
+              SPATIAL ENGINE
+            </span>
+          </div>
+
+          {/* Headline (Figma Node 1:276 - exactly 532px max width) */}
+          <div className="mt-[34px] max-w-[532px]">
+            <h2 className="m-0 font-sans text-[clamp(42px,6.25vw,96px)] font-extrabold uppercase leading-[1.12] tracking-[-0.06em] text-[#F4F3EF]">
+              SOUND
+              <br />
+              WITHOUT
+              <br />
+              DIRECTION.
+            </h2>
+          </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between border-t border-line pt-6 font-mono text-[11px] tracking-[0.2em] text-mute">
-          <span>MOVE YOUR CURSOR TO SHIFT SOUND FIELD</span>
-          <span className="text-[#D8FF3E]">64-POINT RESIDUAL MATRIX</span>
+        {/* Bottom Block: Description + Move Cursor Hint */}
+        <div className="flex flex-wrap items-end justify-between gap-6 pt-6">
+          <p className="m-0 max-w-[400px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+            AERON ARC creates a dimensional soundstage that responds naturally to your movement. Turn your head and the room stays where it is.
+          </p>
+
+          <div className="font-mono text-[10px] font-normal uppercase leading-[2.1] tracking-[0.18em] text-[#B9BCC0]/60 text-right">
+            MOVE YOUR CURSOR
+            <br />
+            TO SHIFT THE FIELD
+          </div>
         </div>
       </div>
     </section>

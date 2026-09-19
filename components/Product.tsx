@@ -2,60 +2,98 @@
 
 import { media } from "@/lib/content";
 
+const FEATURES = [
+  {
+    num: "01",
+    title: "ARCHITECTURAL\nFORM",
+    desc: "A single continuous surface, shaped to vanish against the ear.",
+  },
+  {
+    num: "02",
+    title: "PRECISION\nACOUSTICS",
+    desc: "A sealed titanium chamber tuned across the full audible band.",
+  },
+  {
+    num: "03",
+    title: "ADAPTIVE\nFIT",
+    desc: "Four silicone densities. Pressure that never announces itself.",
+  },
+  {
+    num: "04",
+    title: "SPATIAL\nENGINE",
+    desc: "Head-tracked rendering at 96 kHz, recalculated 1,000× a second.",
+  },
+];
+
 export function Product() {
   return (
     <section
       id="product"
       data-theme="dark"
-      className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(90px,14vh,180px)] text-[#F4F3EF]"
+      className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(80px,12vh,160px)] text-[#F4F3EF]"
     >
-      <div className="mx-auto max-w-[1560px]">
-        <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
-          <div className="lg:col-span-5">
-            <span className="font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
-              02 PRODUCT
-            </span>
-            <h2 className="mt-4 font-sans text-[clamp(36px,5.6vw,84px)] font-extrabold tracking-[-0.03em] leading-[0.94] uppercase">
-              Not just <br />
-              <span className="font-serif font-light italic text-[#F4F3EF]/80">sound.</span>
-            </h2>
-            <p className="mt-6 font-mono text-sm leading-relaxed text-mute">
-              AERON ARC is engineered around the way you actually experience sound — not around a spec sheet.
-            </p>
+      <div className="mx-auto max-w-[1424px]">
+        {/* Eyebrow Meta: 02 —— PRODUCT */}
+        <div className="mb-[clamp(24px,4vh,44px)] flex items-center gap-[14px]">
+          <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
+            02
+          </span>
+          <span className="h-[1px] w-[54px] bg-[#D8FF3E]/50" />
+          <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#B9BCC0] uppercase">
+            PRODUCT
+          </span>
+        </div>
 
-            <div className="mt-10 space-y-6 border-t border-line pt-8">
-              <div>
-                <span className="font-mono text-xs text-[#D8FF3E]">01 / ARCHITECTURAL FORM</span>
-                <p className="mt-1 text-sm text-dim">
-                  A single continuous surface, shaped to vanish against the ear. Zero excess bulk.
-                </p>
-              </div>
-              <div>
-                <span className="font-mono text-xs text-[#D8FF3E]">02 / ACOUSTIC SEAL</span>
-                <p className="mt-1 text-sm text-dim">
-                  Micro-contoured memory ceramic creates an imperceptible hermetic chamber.
-                </p>
-              </div>
-            </div>
+        {/* Section Headline & Description */}
+        <div className="w-full">
+          <h2 className="m-0 font-sans text-[clamp(2.7rem,8vw,8rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.045em] text-[#F4F3EF]">
+            NOT JUST
+            <br />
+            SOUND.
+          </h2>
+          <p className="mt-[22px] max-w-[430px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+            AERON ARC is engineered around the way you actually experience sound — not around a spec sheet.
+          </p>
+        </div>
+
+        {/* Middle Video Container (Using existing Section 2 video) */}
+        <div className="relative my-[clamp(32px,6vh,72px)] h-[clamp(320px,46vw,672px)] w-full overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="h-full w-full object-cover"
+          >
+            <source src={media.section2Video} type="video/mp4" />
+          </video>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0C0C0C]/70 via-transparent to-transparent" />
+          <div className="absolute bottom-6 left-6 font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E]">
+            FIG 02.1 — ACTIVE TRANSDUCER
           </div>
+        </div>
 
-          {/* Section 2 Cloudinary Video */}
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#151515] lg:col-span-7">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              className="h-full w-full object-cover"
+        {/* 4-Feature Cards Grid with 1px hairline dividers */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1px] bg-[#F4F3EF]/10 border border-[#F4F3EF]/10">
+          {FEATURES.map((item) => (
+            <div
+              key={item.num}
+              className="flex flex-col justify-between bg-[#0C0C0C] p-[22px] pt-[26px] pb-[30px]"
             >
-              <source src={media.section2Video} type="video/mp4" />
-            </video>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0C0C0C] via-transparent to-transparent opacity-60" />
-            <div className="absolute bottom-6 left-6 font-mono text-[11px] tracking-[0.2em] text-[#D8FF3E]">
-              FIG 02.1 — ACTIVE TRANSDUCER
+              <div>
+                <div className="mb-4 font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                  {item.num}
+                </div>
+                <div className="font-sans text-[15px] font-bold uppercase leading-[1.25] tracking-[0.02em] text-[#F4F3EF] whitespace-pre-line">
+                  {item.title}
+                </div>
+              </div>
+              <p className="mt-[14px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
+                {item.desc}
+              </p>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

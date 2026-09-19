@@ -43,7 +43,7 @@ export default function Page() {
   return (
     <main>
       <Nav cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
-      <Hero />
+      <Hero onAddToCart={addToCart} />
       <Product />
       <Experience />
       <Technology />

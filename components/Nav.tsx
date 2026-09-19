@@ -33,23 +33,23 @@ export function Nav({ cartCount, onOpenCart }: Props) {
   return (
     <header
       data-nav
-      className={`fixed left-0 right-0 top-0 z-[80] flex items-center justify-between gap-6 pointer-events-none px-gutter py-6 transition-colors duration-500 ${textColor}`}
+      className={`fixed left-0 right-0 top-0 z-[80] flex h-[90px] items-center justify-between pointer-events-none px-gutter py-[26px] transition-colors duration-500 ${textColor}`}
     >
       <a
         href="#top"
         data-cursor="TOP"
-        className="pointer-events-auto font-extrabold text-[18px] tracking-[0.26em] leading-none uppercase"
+        className="pointer-events-auto font-sans font-extrabold text-[18px] tracking-[0.26em] leading-none uppercase"
       >
         AERON
       </a>
 
-      <nav className="hidden pointer-events-auto md:flex items-center gap-[clamp(18px,2.4vw,38px)]">
+      <nav className="hidden pointer-events-auto md:flex items-center gap-[clamp(18px,2.4vw,37px)]">
         {navLinks.map((link) => (
           <a
             key={link.href}
             href={link.href}
             data-cursor="VIEW"
-            className="font-mono text-[11px] tracking-[0.2em] opacity-70 hover:opacity-100 transition-opacity"
+            className="font-mono text-[11px] tracking-[0.2em] opacity-80 hover:opacity-100 transition-opacity"
           >
             {link.label}
           </a>
@@ -61,11 +61,11 @@ export function Nav({ cartCount, onOpenCart }: Props) {
         onClick={onOpenCart}
         data-cursor="OPEN"
         data-magnetic
-        className="pointer-events-auto flex flex-shrink-0 items-center gap-2.5 rounded-full border border-current bg-transparent px-5 py-2.5 font-mono text-[11px] tracking-[0.18em] transition-transform duration-300"
+        className="pointer-events-auto flex flex-shrink-0 items-center gap-2.5 rounded-full border border-current bg-transparent px-5 py-[9px] font-mono text-[11px] tracking-[0.18em] transition-all duration-300 hover:bg-white/10"
       >
         <span>BUY AERON ARC</span>
-        <span data-cart-count className="opacity-60 tabular-nums">
-          [{cartCount}]
+        <span data-cart-count className="tabular-nums opacity-75">
+          {cartCount > 0 ? cartCount : 1}
         </span>
       </button>
     </header>
