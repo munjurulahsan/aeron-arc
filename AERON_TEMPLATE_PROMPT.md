@@ -180,6 +180,7 @@ export function Nav({ cartCount, onOpenCart }: Props) {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 type HeroProps = {
@@ -187,12 +188,44 @@ type HeroProps = {
 };
 
 export function Hero({ onAddToCart }: HeroProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+
+    const el = sectionRef.current;
+    if (!el) return () => clearTimeout(timer);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="top"
       data-theme="dark"
       className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-[clamp(24px,4vh,48px)] pt-[clamp(96px,14vh,160px)] text-[#F4F3EF]"
     >
+      {/* Background Cloudinary Video */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <video
           autoPlay
@@ -204,6 +237,8 @@ export function Hero({ onAddToCart }: HeroProps) {
         >
           <source src={media.heroVideo} type="video/mp4" />
         </video>
+
+        {/* Figma Radial Gradient Overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -211,15 +246,27 @@ export function Hero({ onAddToCart }: HeroProps) {
               "radial-gradient(70% 55% at 50% 52%, rgba(8,8,8,0) 0%, rgba(8,8,8,0.72) 70%, #080808 100%)",
           }}
         />
+
+        {/* Subtle Top & Bottom Linear Shading */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#080808]/60 via-transparent to-[#080808]" />
       </div>
 
-      <div className="relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4">
+      {/* Main Headline Group (Unified with controlled, tighter spacing) */}
+      <div
+        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
+        {/* Line 1: SOUND, (Left-aligned) */}
         <div data-hero-type="left" className="w-full">
           <h1 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
             SOUND,
           </h1>
         </div>
+
+        {/* Line 2: REIMAGINED. (Close spacing to Line 1 + offset horizontally to x=527px) */}
         <div
           data-hero-type="right"
           className="mt-[clamp(12px,3vw,40px)] md:ml-[clamp(40px,28vw,470px)]"
@@ -230,17 +277,30 @@ export function Hero({ onAddToCart }: HeroProps) {
         </div>
       </div>
 
-      <div className="relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4">
+      {/* Bottom Row: Meta, CTAs & Scroll Indicator */}
+      <div
+        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4 transition-all duration-[1600ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
+        {/* Left Column */}
         <div className="flex max-w-[420px] flex-col gap-[22px]">
+          {/* Status Row */}
           <div className="flex items-center gap-[10px] font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#B9BCC0] uppercase">
             <span className="h-[6px] w-[6px] rounded-full bg-[#D8FF3E] animate-aeron-pulse shadow-[0_0_8px_rgba(216,255,62,0.8)]" />
             <span>SPATIAL AUDIO</span>
             <span className="h-[1px] w-[26px] bg-[#B9BCC0]/40" />
             <span className="text-[#F4F3EF]">ACTIVE</span>
           </div>
+
+          {/* Description Paragraph */}
           <p className="m-0 max-w-[330px] font-sans text-[14px] leading-[1.65] text-[#B9BCC0]">
             Precision-engineered spatial audio. Designed to disappear into your world.
           </p>
+
+          {/* Action Buttons Row */}
           <div className="flex flex-wrap items-center gap-3">
             <a
               href="#product"
@@ -262,6 +322,7 @@ export function Hero({ onAddToCart }: HeroProps) {
           </div>
         </div>
 
+        {/* Right Column: Scroll Indicator */}
         <div className="flex flex-col items-end gap-[10px] text-right font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/60 uppercase">
           <span>ARC / GEN 01</span>
           <span>SCROLL TO BEGIN</span>
@@ -276,6 +337,7 @@ export function Hero({ onAddToCart }: HeroProps) {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 const FEATURES = [
@@ -302,13 +364,46 @@ const FEATURES = [
 ];
 
 export function Product() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="product"
       data-theme="dark"
       className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(80px,12vh,160px)] text-[#F4F3EF]"
     >
-      <div className="mx-auto max-w-[1424px]">
+      <div
+        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
+        {/* Eyebrow Meta: 02 —— PRODUCT */}
         <div className="mb-[clamp(24px,4vh,44px)] flex items-center gap-[14px]">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
             02
@@ -319,6 +414,7 @@ export function Product() {
           </span>
         </div>
 
+        {/* Section Headline & Description */}
         <div className="w-full">
           <h2 className="m-0 font-sans text-[clamp(2.7rem,8vw,8rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.045em] text-[#F4F3EF]">
             NOT JUST
@@ -330,6 +426,7 @@ export function Product() {
           </p>
         </div>
 
+        {/* Middle Video Container (Using existing Section 2 video) */}
         <div className="relative my-[clamp(32px,6vh,72px)] h-[clamp(320px,46vw,672px)] w-full overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
           <video
             autoPlay
@@ -347,6 +444,7 @@ export function Product() {
           </div>
         </div>
 
+        {/* 4-Feature Cards Grid with 1px hairline dividers */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1px] bg-[#F4F3EF]/10 border border-[#F4F3EF]/10">
           {FEATURES.map((item) => (
             <div
@@ -376,16 +474,49 @@ export function Product() {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 export function Experience() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="experience"
       data-theme="dark"
       className="relative overflow-hidden bg-[#080808] px-gutter py-[clamp(90px,14vh,180px)] text-[#F4F3EF]"
     >
-      <div className="relative mx-auto h-[clamp(520px,92svh,940px)] w-full overflow-hidden rounded-3xl">
+      <div
+        className={`relative mx-auto h-[clamp(520px,92svh,940px)] w-full overflow-hidden rounded-3xl transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <video
           autoPlay
           muted
@@ -426,13 +557,36 @@ export function Experience() {
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 export function Technology() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLImageElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -544,7 +698,14 @@ export function Technology() {
         className="pointer-events-none absolute inset-0 z-[1] h-full w-full opacity-60 mix-blend-screen"
       />
 
-      <div className="relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between">
+      {/* Content Container (Figma Node 1:266) */}
+      <div
+        className={`relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div>
           <div className="flex items-center gap-[14px]">
             <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
@@ -587,15 +748,43 @@ export function Technology() {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 export function Precision() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="engineering"
       data-theme="dark"
       className="relative min-h-[875px] overflow-hidden bg-[#151515] px-gutter py-[clamp(64px,9vh,97px)] text-[#F4F3EF]"
     >
+      {/* Background Architectural Ray / Stage Image from Figma */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
           src={media.precisionBg}
@@ -605,7 +794,13 @@ export function Precision() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#151515] via-transparent to-[#151515]/80" />
       </div>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between">
+      <div
+        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div className="w-full">
           <div className="flex items-center gap-[14px]">
             <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
@@ -1094,12 +1289,36 @@ export function ExplodedView() {
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 export function Battery() {
   const barRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -1119,10 +1338,18 @@ export function Battery() {
 
   return (
     <section
+      ref={sectionRef}
       data-theme="light"
       className="relative bg-[#F4F3EF] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#080808]"
     >
-      <div ref={containerRef} className="mx-auto max-w-[1424px]">
+      <div
+        ref={containerRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
             <div className="flex items-center gap-3.5">
@@ -1208,6 +1435,8 @@ export function Battery() {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
+
 const systems = [
   {
     id: "01",
@@ -1232,12 +1461,44 @@ const systems = [
 ];
 
 export function Acoustics() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       data-theme="dark"
       className="relative bg-[#080808] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#F4F3EF]"
     >
-      <div className="mx-auto max-w-[1424px]">
+      <div
+        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div className="flex items-center gap-3.5">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
             08
@@ -1367,7 +1628,7 @@ export function Gallery() {
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FINISHES, media } from "@/lib/content";
 
 type Props = {
@@ -1376,15 +1637,46 @@ type Props = {
 
 export function Finishes({ onAddToCart }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const active = FINISHES[activeIdx];
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="support"
       data-theme="light"
       className="relative bg-[#F4F3EF] px-gutter py-[clamp(90px,14vh,180px)] text-[#080808]"
     >
-      <div className="mx-auto max-w-[1560px]">
+      <div
+        className={`mx-auto max-w-[1560px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-5">
             <span className="font-mono text-[11px] tracking-[0.24em] text-[#080808]/60 uppercase">
@@ -1448,6 +1740,7 @@ export function Finishes({ onAddToCart }: Props) {
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 type Props = {
@@ -1455,8 +1748,34 @@ type Props = {
 };
 
 export function FinalCTA({ onAddToCart }: Props) {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       data-theme="dark"
       className="relative flex min-h-[695px] items-center justify-center overflow-hidden bg-[#050505] text-[#F4F3EF]"
     >
@@ -1469,30 +1788,40 @@ export function FinalCTA({ onAddToCart }: Props) {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,5,5,0.35)_0%,rgba(5,5,5,0.85)_75%,#050505_100%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-[clamp(20px,3.65vw,56px)] py-[clamp(80px,7.24vw,111px)] text-center">
+      <div
+        className={`relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-[clamp(20px,3.65vw,56px)] py-[clamp(80px,7.24vw,111px)] text-center transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <h2 className="font-sans text-[clamp(48px,7vw,108px)] font-[900] leading-[0.92] tracking-[0.037em] text-[#F4F3EF]">
-          HEAR
-          <br />
-          EVERYTHING.
+          Hear what&apos;s next.
         </h2>
 
-        <p className="mt-[22px] max-w-[440px] font-sans text-[14px] font-normal leading-[1.65] text-[#B9BCC0]">
-          Experience sound as it was meant to be experienced. 30-day trial, complimentary express shipping, lifetime support.
+        <p className="mt-7 max-w-[400px] font-sans text-[14px] leading-[1.7] text-[#B9BCC0]">
+          A new generation of wireless audio, built around how the world sounds to you.
         </p>
 
-        <div className="mt-10 flex flex-col items-center gap-4">
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={onAddToCart}
-            data-cursor="BUY"
+            data-cursor="ORDER"
             data-magnetic
-            className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[#F4F3EF] px-10 py-5 font-mono text-[12px] font-bold tracking-[0.2em] text-[#080808] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="rounded-full bg-[#F4F3EF] px-[30px] py-4 font-mono text-[11px] font-[600] leading-none tracking-[0.16em] text-[#080808] transition-transform duration-300 ease-out hover:scale-105 active:scale-95"
           >
-            ORDER AERON ARC — $249
+            BUY AERON ARC — $249
           </button>
-          <span className="font-mono text-[10px] tracking-[0.2em] text-[#D8FF3E]">
-            ONLY 42 UNITS LEFT IN DROP 01
-          </span>
+
+          <a
+            href="#technology"
+            data-cursor="LEARN"
+            data-magnetic
+            className="rounded-full border border-[#F4F3EF]/35 bg-transparent px-[30px] py-4 font-mono text-[11px] font-[400] leading-none tracking-[0.16em] text-[#F4F3EF] transition-colors duration-300 hover:border-[#F4F3EF] hover:bg-white/[0.04]"
+          >
+            EXPLORE TECHNOLOGY
+          </a>
         </div>
       </div>
     </section>
