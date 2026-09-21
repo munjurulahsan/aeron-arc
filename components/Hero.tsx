@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 type HeroProps = {
@@ -7,8 +8,39 @@ type HeroProps = {
 };
 
 export function Hero({ onAddToCart }: HeroProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+
+    const el = sectionRef.current;
+    if (!el) return () => clearTimeout(timer);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="top"
       data-theme="dark"
       className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-[clamp(24px,4vh,48px)] pt-[clamp(96px,14vh,160px)] text-[#F4F3EF]"
@@ -40,7 +72,13 @@ export function Hero({ onAddToCart }: HeroProps) {
       </div>
 
       {/* Main Headline Group (Unified with controlled, tighter spacing) */}
-      <div className="relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4">
+      <div
+        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         {/* Line 1: SOUND, (Left-aligned) */}
         <div data-hero-type="left" className="w-full">
           <h1 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
@@ -60,7 +98,13 @@ export function Hero({ onAddToCart }: HeroProps) {
       </div>
 
       {/* Bottom Row: Meta, CTAs & Scroll Indicator */}
-      <div className="relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4">
+      <div
+        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4 transition-all duration-[1600ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         {/* Left Column */}
         <div className="flex max-w-[420px] flex-col gap-[22px]">
           {/* Status Row */}

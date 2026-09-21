@@ -1,19 +1,48 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
+import { media } from "@/lib/content";
+
 type Props = {
   onAddToCart?: () => void;
 };
 
 export function FinalCTA({ onAddToCart }: Props) {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       data-theme="dark"
       className="relative flex min-h-[695px] items-center justify-center overflow-hidden bg-[#050505] text-[#F4F3EF]"
     >
       {/* Background Image from Figma (node 1:427) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
-          src="/assets/final-cta-bg.png"
+          src={media.finalCtaBg}
           alt=""
           className="h-full w-full object-cover object-center filter brightness-[0.72] contrast-[1.08]"
         />
@@ -21,7 +50,13 @@ export function FinalCTA({ onAddToCart }: Props) {
       </div>
 
       {/* Content Container (841px in Figma) */}
-      <div className="relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-[clamp(20px,3.65vw,56px)] py-[clamp(80px,7.24vw,111px)] text-center">
+      <div
+        className={`relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-[clamp(20px,3.65vw,56px)] py-[clamp(80px,7.24vw,111px)] text-center transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <h2 className="font-sans text-[clamp(48px,7vw,108px)] font-[900] leading-[0.92] tracking-[0.037em] text-[#F4F3EF]">
           Hear what&apos;s next.
         </h2>

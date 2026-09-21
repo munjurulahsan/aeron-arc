@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
 
 const FEATURES = [
@@ -26,13 +27,45 @@ const FEATURES = [
 ];
 
 export function Product() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="product"
       data-theme="dark"
       className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(80px,12vh,160px)] text-[#F4F3EF]"
     >
-      <div className="mx-auto max-w-[1424px]">
+      <div
+        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         {/* Eyebrow Meta: 02 —— PRODUCT */}
         <div className="mb-[clamp(24px,4vh,44px)] flex items-center gap-[14px]">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">

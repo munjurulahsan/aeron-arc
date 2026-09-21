@@ -1,10 +1,35 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { media } from "@/lib/content";
 
 export function Battery() {
   const barRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -24,10 +49,18 @@ export function Battery() {
 
   return (
     <section
+      ref={sectionRef}
       data-theme="light"
       className="relative bg-[#F4F3EF] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#080808]"
     >
-      <div ref={containerRef} className="mx-auto max-w-[1424px]">
+      <div
+        ref={containerRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
           {/* Left Column */}
           <div className="lg:col-span-7">
@@ -104,7 +137,7 @@ export function Battery() {
           <div className="flex items-center justify-center lg:col-span-5 lg:justify-end">
             <div className="relative aspect-[492/590] w-full max-w-[492px]">
               <img
-                src="/assets/charging-pod-open.png"
+                src={media.chargingPod}
                 alt="AERON ARC charging pod, open"
                 className="h-full w-full object-contain filter drop-shadow-[0_24px_48px_rgba(0,0,0,0.18)] transition-transform duration-700 ease-out hover:scale-[1.02]"
               />

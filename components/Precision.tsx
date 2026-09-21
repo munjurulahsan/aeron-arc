@@ -1,8 +1,37 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
+import { media } from "@/lib/content";
+
 export function Precision() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="engineering"
       data-theme="dark"
       className="relative min-h-[875px] overflow-hidden bg-[#151515] px-gutter py-[clamp(64px,9vh,97px)] text-[#F4F3EF]"
@@ -10,14 +39,20 @@ export function Precision() {
       {/* Background Architectural Ray / Stage Image from Figma */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
-          src="/assets/precision-bg.jpg"
+          src={media.precisionBg}
           alt=""
           className="h-full w-full object-cover object-center opacity-40 filter contrast-[1.05]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#151515] via-transparent to-[#151515]/80" />
       </div>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between">
+      <div
+        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         {/* Top Header: Eyebrow + Built with Precision */}
         <div className="w-full">
           {/* Eyebrow Meta: 05 —— ENGINEERING */}
@@ -82,7 +117,7 @@ export function Precision() {
           <div className="flex justify-center lg:col-span-4">
             <div className="relative w-full max-w-[444px]">
               <img
-                src="/assets/precision-macro.png"
+                src={media.precisionMacro}
                 alt="AERON ARC Precision Engineering"
                 className="animate-aeron-float h-auto w-full object-contain filter drop-shadow-[0_24px_48px_rgba(0,0,0,0.6)]"
               />

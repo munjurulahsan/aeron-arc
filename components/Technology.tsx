@@ -1,11 +1,35 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { media } from "@/lib/content";
 
 export function Technology() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLImageElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -120px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -106,7 +130,7 @@ export function Technology() {
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
           ref={bgRef}
-          src="/assets/spatial-engine-bg.png"
+          src={media.spatialEngineBg}
           alt="AERON ARC Spatial Engine"
           className="h-full w-full object-cover object-center scale-105 transition-transform duration-300 ease-out"
         />
@@ -122,7 +146,13 @@ export function Technology() {
       />
 
       {/* Content Container (Figma Node 1:266) */}
-      <div className="relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between">
+      <div
+        className={`relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+          isVisible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-36 opacity-0 scale-[0.92]"
+        }`}
+      >
         {/* Top Block: Eyebrow + 3-line Stacked Headline */}
         <div>
           {/* Eyebrow Meta: 04 —— SPATIAL ENGINE */}
