@@ -14,8 +14,6 @@ import { Acoustics } from "@/components/Acoustics";
 import { Gallery } from "@/components/Gallery";
 import { Finishes } from "@/components/Finishes";
 import { FinalCTA } from "@/components/FinalCTA";
-import { ScrollProgressBar } from "@/components/ScrollProgressBar";
-import { CustomCursor } from "@/components/CustomCursor";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 
@@ -51,8 +49,6 @@ export default function Page() {
 
   return (
     <main>
-      <ScrollProgressBar />
-      <CustomCursor />
       <Nav cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
       <Hero onAddToCart={addToCart} />
       <Product />

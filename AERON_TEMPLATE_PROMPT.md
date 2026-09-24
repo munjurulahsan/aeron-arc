@@ -1,13 +1,14 @@
 ## Environment
 
-This template is structured for a Next.js project with the App Router:
+This template is structured for a Next.js 15 project with the App Router:
 
-- File paths use /components/..., /lib/..., and /app/...
+- File paths use /components/..., /hooks/..., /lib/..., and /app/... (project root, no /src)
 - Components use the "use client" directive where client-side interactivity is required
-- Imports use the @/... path alias (e.g. @/components/..., @/lib/...)
-- Tailwind CSS (v4) for styling
-- lenis for smooth momentum scrolling
-- All media assets (images and videos) are cloud-hosted via Cloudinary and GitHub Raw CDN, requiring no local media files
+- Imports use the @/... path alias (e.g. @/components/..., @/lib/...), mapped to the project root in tsconfig.json
+- Tailwind CSS (v4, CSS-first config via @theme — there is NO tailwind.config.js)
+- lenis for smooth momentum scrolling (no GSAP, no Framer Motion — all animation is CSS transitions + requestAnimationFrame)
+- Fonts: Archivo + IBM Plex Mono via next/font/google
+- All media assets (images and videos) are remote — Cloudinary (videos) and GitHub Raw CDN (images). No local media files are required.
 
 If you support this exact structure, apply the files below as written.
 
@@ -18,17 +19,39 @@ The only adaptations allowed are:
 - Entry point file (e.g. src/App.tsx instead of app/page.tsx)
 - Removing "use client" directives if your builder doesn't use Next.js
 - Replacing the @/... alias with the correct relative path
-- Replacing Next.js-specific imports with standard <img> tags only if your builder doesn't support Next.js
+- Replacing next/font/google with an equivalent Google Fonts <link> for Archivo (400–800) and IBM Plex Mono (400, 500) only if your builder doesn't support Next.js — keep the CSS variable names --font-archivo and --font-ibm-plex-mono
 - Installing any missing dependencies via your builder's package manager before applying the files
 
-Everything else — JSX, hooks, component names, exports, props, className values, animations, styling, and logic — stays exactly as written. The output must run without any errors.
+Everything else — JSX, hooks, component names, exports, props, className values, inline styles, animations, styling, and logic — stays exactly as written. The output must run without any errors.
 
 ---
 
 ## Add Template: AERON ARC — Sound, Reimagined Landing Page
 
-### File 1 of 17: /lib/content.ts
+A 12-section dark/light editorial landing page for wireless earbuds: Hero (video) → Product → Experience → Technology (spatial canvas) → Engineering → Exploded View (scroll-driven disassembly, 8 parts) → Power → Intelligence → Gallery (horizontal scroll) → Finishes → Final CTA → Footer, plus a pill nav with active-section highlight, mobile drawer menu, cart drawer, custom cursor and scroll progress bar.
 
+### Responsive behaviour (built in — do not change)
+
+The layout is fully responsive using Tailwind's DEFAULT breakpoints. Do not customise or override them:
+
+| Breakpoint | Min width | What changes |
+|---|---|---|
+| (base) | 0px | Mobile: single column, hamburger → full-screen drawer menu, "BUY ARC" short label, stacked CTAs, Exploded View uses the narrow vertical layout |
+| sm | 640px | Larger type/spacing, "BUY AERON ARC" full label, CTAs side by side |
+| md | 768px | Tablet: still hamburger + drawer menu, 12-col grids start, larger section heights |
+| lg | 1024px | Desktop: pill nav appears (hamburger hidden), side-by-side section layouts, full section heights |
+| xl | 1280px | Wide desktop spacing, wider nav link padding |
+
+- Exploded View switches between its narrow (vertical) and wide (diagonal) layouts in JavaScript at window.innerWidth < 900.
+- Horizontal gutter everywhere is the `px-gutter` token = clamp(16px, 4vw, 56px).
+- Content max width is 1424px (Finishes: 1560px), centred.
+- There must be no horizontal page scroll at any width (body has overflow-x: hidden).
+
+---
+
+### File 1 of 18: /lib/content.ts
+
+```tsx
 export const ASSET_BASE = "https://raw.githubusercontent.com/munjurulahsan/asset/main/cloud_assets-1";
 
 export const media = {
@@ -87,9 +110,11 @@ export const FINISHES = [
 
 export const navLinks = [
   { href: "#product", label: "PRODUCT" },
-  { href: "#technology", label: "TECHNOLOGY" },
   { href: "#experience", label: "EXPERIENCE" },
-  { href: "#support", label: "SUPPORT" },
+  { href: "#technology", label: "TECHNOLOGY" },
+  { href: "#engineering", label: "ENGINEERING" },
+  { href: "#battery", label: "POWER" },
+  { href: "#finishes", label: "FINISHES" },
 ];
 
 export const gallerySlides = [
@@ -99,9 +124,121 @@ export const gallerySlides = [
   { id: "04", tag: "NIGHT", title: "Warm timbre under ambient glow.", img: `${ASSET_BASE}/096c8515-c4be-4524-a90d-678c13bfde2d.jpg` },
   { id: "05", tag: "IMMERSION", title: "Spatial cinema right in your ears.", img: `${ASSET_BASE}/35dd1095-6232-46ed-97ff-c4e80a85810f.jpg` },
 ];
+```
 
-### File 2 of 17: /components/Nav.tsx
+### File 2 of 18: /hooks/useSectionTransition.ts
 
+```tsx
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+export function useSectionTransition(
+  sectionId: string,
+  customRef?: React.RefObject<any>
+) {
+  const [isVisible, setIsVisible] = useState(false);
+  const internalRef = useRef<any>(null);
+  const elementRef = customRef || internalRef;
+
+  useEffect(() => {
+    let navTimer: ReturnType<typeof setTimeout> | null = null;
+    let isNavigating = false;
+
+    const getTarget = (): HTMLElement | null => {
+      if (elementRef.current) return elementRef.current;
+      if (typeof document !== "undefined") {
+        return (
+          document.getElementById(sectionId) ||
+          document.querySelector(`[data-${sectionId}]`) ||
+          document.querySelector(`[data-hgallery]`) ||
+          null
+        );
+      }
+      return null;
+    };
+
+    // Real-time position check on scroll to guarantee transition plays when content enters view
+    const checkVisibility = () => {
+      if (isNavigating) return;
+      const el = getTarget();
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || 800;
+
+      // Trigger when element's top enters screen and hasn't completely scrolled away above
+      const inView = rect.top < vh * 0.88 && rect.bottom > 60;
+      setIsVisible(inView);
+    };
+
+    let observer: IntersectionObserver | null = null;
+    const el = getTarget();
+    if (el) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (isNavigating) return;
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          } else {
+            // Keep visible if currently inside or around viewport
+            const rect = el.getBoundingClientRect();
+            const vh = window.innerHeight || 800;
+            if (rect.top < vh && rect.bottom > 0) {
+              setIsVisible(true);
+            } else {
+              setIsVisible(false);
+            }
+          }
+        },
+        {
+          threshold: 0.05,
+          rootMargin: "50px 0px -5% 0px",
+        }
+      );
+      observer.observe(el);
+    }
+
+    // Continuous scroll & resize listeners to catch all scrolling motions
+    window.addEventListener("scroll", checkVisibility, { passive: true });
+    window.addEventListener("resize", checkVisibility, { passive: true });
+
+    // Custom navigation events from Nav clicks
+    const handleNav = (e: Event) => {
+      const customEvent = e as CustomEvent<{ targetId: string }>;
+      if (customEvent.detail?.targetId === sectionId) {
+        if (navTimer) clearTimeout(navTimer);
+        isNavigating = true;
+        setIsVisible(false);
+        navTimer = setTimeout(() => {
+          setIsVisible(true);
+          isNavigating = false;
+        }, 280);
+      }
+    };
+
+    window.addEventListener("aeron:navigate", handleNav);
+
+    // Initial checks (immediate and next tick for layout settling)
+    checkVisibility();
+    const rafId = requestAnimationFrame(checkVisibility);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
+      window.removeEventListener("scroll", checkVisibility);
+      window.removeEventListener("resize", checkVisibility);
+      window.removeEventListener("aeron:navigate", handleNav);
+      if (navTimer) clearTimeout(navTimer);
+    };
+  }, [sectionId, elementRef]);
+
+  return { isVisible, elementRef, sectionRef: elementRef };
+}
+```
+
+### File 3 of 18: /components/Nav.tsx
+
+```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -113,71 +250,200 @@ type Props = {
 };
 
 export function Nav({ cartCount, onOpenCart }: Props) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-theme]"));
-      let currentTheme: "dark" | "light" = "dark";
-      for (const sec of sections) {
-        const rect = sec.getBoundingClientRect();
-        if (rect.top <= 64 && rect.bottom > 64) {
-          currentTheme = (sec.getAttribute("data-theme") as "dark" | "light") || "dark";
+      const y = window.scrollY || window.pageYOffset;
+      setScrolled(y > 30);
+
+      // Determine active section for menu bar highlighting
+      const sections = ["product", "experience", "technology", "engineering", "battery", "finishes"];
+      let current = "";
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 220 && rect.bottom >= 60) {
+            current = id;
+            break;
+          }
         }
       }
-      setTheme(currentTheme);
+      setActiveSection(current);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const textColor = theme === "light" ? "text-[#080808]" : "text-[#F4F3EF]";
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    if (href === "#top") {
+      if (typeof window !== "undefined" && (window as any).__lenis) {
+        (window as any).__lenis.scrollTo(0, { duration: 1 });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      return;
+    }
+    const target = document.querySelector(href);
+    if (target) {
+      const targetId = href.replace("#", "");
+      // Notify section to prepare and trigger bottom-to-top transition
+      window.dispatchEvent(new CustomEvent("aeron:navigate", { detail: { targetId } }));
+
+      if (typeof window !== "undefined" && (window as any).__lenis) {
+        (window as any).__lenis.scrollTo(target, {
+          offset: -80,
+          duration: 1.1,
+        });
+      } else {
+        const offset = 80;
+        const elementPos = target.getBoundingClientRect().top;
+        const offsetPos = elementPos + window.pageYOffset - offset;
+        window.scrollTo({
+          top: offsetPos,
+          behavior: "smooth",
+        });
+      }
+    }
+  };
 
   return (
-    <header
-      data-nav
-      className={`fixed left-0 right-0 top-0 z-[80] flex h-[90px] items-center justify-between pointer-events-none px-gutter py-[26px] transition-colors duration-500 ${textColor}`}
-    >
-      <a
-        href="#top"
-        data-cursor="TOP"
-        className="pointer-events-auto font-sans font-extrabold text-[18px] tracking-[0.26em] leading-none uppercase"
+    <>
+      <header
+        data-nav
+        className={`fixed left-0 right-0 top-0 z-[80] flex items-center justify-between pointer-events-none px-gutter transition-all duration-300 ${
+          scrolled
+            ? "h-[68px] md:h-[76px] bg-[#080808]/85 backdrop-blur-xl border-b border-white/[0.08] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)] text-[#F4F3EF]"
+            : "h-[76px] md:h-[90px] bg-transparent border-b border-transparent text-[#F4F3EF]"
+        }`}
       >
-        AERON
-      </a>
-
-      <nav className="hidden pointer-events-auto md:flex items-center gap-[clamp(18px,2.4vw,37px)]">
-        {navLinks.map((link) => (
+        {/* Left: AERON Branding */}
+        <div className="flex items-center gap-3 pointer-events-auto">
           <a
-            key={link.href}
-            href={link.href}
-            data-cursor="VIEW"
-            className="font-mono text-[11px] tracking-[0.2em] opacity-80 hover:opacity-100 transition-opacity"
+            href="#top"
+            onClick={(e) => handleNavClick(e, "#top")}
+            data-cursor="TOP"
+            className="flex items-center gap-2 font-sans font-extrabold text-[17px] sm:text-[19px] tracking-[0.26em] leading-none uppercase text-[#F4F3EF] hover:opacity-85 transition-opacity"
           >
-            {link.label}
+            <span>AERON</span>
+            <span className="hidden sm:inline-block h-1.5 w-1.5 rounded-full bg-[#D8FF3E] animate-aeron-pulse" />
           </a>
-        ))}
-      </nav>
+        </div>
 
-      <button
-        type="button"
-        onClick={onOpenCart}
-        data-cursor="OPEN"
-        data-magnetic
-        className="pointer-events-auto flex flex-shrink-0 items-center gap-2.5 rounded-full border border-current bg-transparent px-5 py-[9px] font-mono text-[11px] tracking-[0.18em] transition-all duration-300 hover:bg-white/10"
-      >
-        <span>BUY AERON ARC</span>
-        <span data-cart-count className="tabular-nums opacity-75">
-          {cartCount > 0 ? cartCount : 1}
-        </span>
-      </button>
-    </header>
+        {/* Center: Desktop Menu Bar (Pill Capsule) */}
+        <nav className="hidden pointer-events-auto lg:flex items-center gap-1 rounded-full bg-white/[0.05] p-1.5 border border-white/[0.08] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+          {navLinks.map((link) => {
+            const isActive = activeSection === link.href.replace("#", "");
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                data-cursor="VIEW"
+                className={`relative flex items-center gap-1.5 rounded-full px-3 xl:px-4 py-1.5 font-mono text-[10.5px] tracking-[0.18em] uppercase transition-all duration-200 ${
+                  isActive
+                    ? "bg-[#D8FF3E]/15 text-[#D8FF3E] font-semibold border border-[#D8FF3E]/30 shadow-[0_0_10px_rgba(216,255,62,0.15)]"
+                    : "text-[#B9BCC0] hover:text-[#F4F3EF] hover:bg-white/[0.06] border border-transparent"
+                }`}
+              >
+                {isActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#D8FF3E] animate-aeron-pulse" />
+                )}
+                <span>{link.label}</span>
+              </a>
+            );
+          })}
+        </nav>
+
+        {/* Right: Actions (Cart Button + Mobile Toggle) */}
+        <div className="pointer-events-auto flex items-center gap-2.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={onOpenCart}
+            data-cursor="OPEN"
+            data-magnetic
+            className="group flex flex-shrink-0 items-center gap-2.5 rounded-full border border-white/20 bg-white/[0.04] px-4 sm:px-5 py-[8px] sm:py-[9px] font-mono text-[10.5px] sm:text-[11px] tracking-[0.16em] text-[#F4F3EF] backdrop-blur-sm transition-all duration-300 hover:border-[#D8FF3E] hover:bg-[#D8FF3E]/10 hover:text-[#D8FF3E] active:scale-[0.98]"
+          >
+            <span className="hidden sm:inline">BUY AERON ARC</span>
+            <span className="sm:hidden">BUY ARC</span>
+            <span
+              data-cart-count
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold tabular-nums text-[#F4F3EF] group-hover:bg-[#D8FF3E] group-hover:text-[#080808] transition-colors"
+            >
+              {cartCount > 0 ? cartCount : 1}
+            </span>
+          </button>
+
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="flex lg:hidden items-center justify-center h-9 w-9 rounded-full border border-white/20 bg-white/[0.04] text-[#F4F3EF] transition-colors hover:border-[#D8FF3E]"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? (
+              <span className="font-mono text-[12px] font-bold">✕</span>
+            ) : (
+              <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[75] flex flex-col justify-between bg-[#080808]/95 backdrop-blur-2xl px-gutter pt-24 pb-10 text-[#F4F3EF] lg:hidden animate-in fade-in duration-200">
+          <div className="flex flex-col gap-5">
+            <span className="font-mono text-[10px] tracking-[0.24em] text-[#D8FF3E] uppercase">
+              NAVIGATION
+            </span>
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.href.replace("#", "");
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className={`flex items-center justify-between font-sans text-2xl font-bold tracking-tight py-2 transition-colors ${
+                    isActive ? "text-[#D8FF3E]" : "text-[#F4F3EF] hover:text-[#D8FF3E]"
+                  }`}
+                >
+                  <span>{link.label}</span>
+                  {isActive && (
+                    <span className="h-2 w-2 rounded-full bg-[#D8FF3E] animate-aeron-pulse" />
+                  )}
+                </a>
+              );
+            })}
+          </div>
+
+          <div className="border-t border-white/10 pt-6 flex flex-col gap-4 font-mono text-xs text-[#B9BCC0]">
+            <div className="flex justify-between items-center">
+              <span>AERON ARC / GEN 01</span>
+              <span className="text-[#D8FF3E]">$249</span>
+            </div>
+            <div className="text-[10px] opacity-60">PRECISION-ENGINEERED WIRELESS AUDIO</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+```
 
-### File 3 of 17: /components/Hero.tsx
+### File 4 of 18: /components/Hero.tsx
 
+```tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -192,30 +458,8 @@ export function Hero({ onAddToCart }: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-
-    const el = sectionRef.current;
-    if (!el) return () => clearTimeout(timer);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
+    const timer = setTimeout(() => setIsVisible(true), 60);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -223,7 +467,7 @@ export function Hero({ onAddToCart }: HeroProps) {
       ref={sectionRef}
       id="top"
       data-theme="dark"
-      className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-[clamp(24px,4vh,48px)] pt-[clamp(96px,14vh,160px)] text-[#F4F3EF]"
+      className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-6 sm:pb-8 md:pb-12 pt-[clamp(80px,12vh,140px)] text-[#F4F3EF]"
     >
       {/* Background Cloudinary Video */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -253,15 +497,15 @@ export function Hero({ onAddToCart }: HeroProps) {
 
       {/* Main Headline Group (Unified with controlled, tighter spacing) */}
       <div
-        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.97]"
         }`}
       >
         {/* Line 1: SOUND, (Left-aligned) */}
         <div data-hero-type="left" className="w-full">
-          <h1 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
+          <h1 className="m-0 font-sans text-[clamp(2.4rem,8.8vw,10.5rem)] font-extrabold uppercase leading-[0.85] tracking-[-0.045em] text-[#F4F3EF]">
             SOUND,
           </h1>
         </div>
@@ -269,9 +513,9 @@ export function Hero({ onAddToCart }: HeroProps) {
         {/* Line 2: REIMAGINED. (Close spacing to Line 1 + offset horizontally to x=527px) */}
         <div
           data-hero-type="right"
-          className="mt-[clamp(12px,3vw,40px)] md:ml-[clamp(40px,28vw,470px)]"
+          className="mt-2 sm:mt-[clamp(8px,2.5vw,36px)] md:ml-[clamp(40px,28vw,470px)]"
         >
-          <h2 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
+          <h2 className="m-0 font-sans text-[clamp(2.4rem,8.8vw,10.5rem)] font-extrabold uppercase leading-[0.85] tracking-[-0.045em] text-[#F4F3EF]">
             REIMAGINED.
           </h2>
         </div>
@@ -279,10 +523,10 @@ export function Hero({ onAddToCart }: HeroProps) {
 
       {/* Bottom Row: Meta, CTAs & Scroll Indicator */}
       <div
-        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4 transition-all duration-[1600ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-5 sm:gap-7 pt-4 transition-all duration-1000 delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.97]"
         }`}
       >
         {/* Left Column */}
@@ -304,6 +548,18 @@ export function Hero({ onAddToCart }: HeroProps) {
           <div className="flex flex-wrap items-center gap-3">
             <a
               href="#product"
+              onClick={(e) => {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent("aeron:navigate", { detail: { targetId: "product" } }));
+                const target = document.querySelector("#product");
+                if (target) {
+                  if (typeof window !== "undefined" && (window as any).__lenis) {
+                    (window as any).__lenis.scrollTo(target, { offset: -80, duration: 1.1 });
+                  } else {
+                    target.scrollIntoView({ behavior: "smooth" });
+                  }
+                }
+              }}
               data-cursor="EXPLORE"
               data-magnetic
               className="inline-flex items-center justify-center rounded-full bg-[#F4F3EF] px-[26px] py-[15px] font-mono text-[11px] font-medium tracking-[0.16em] text-[#080808] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
@@ -332,13 +588,15 @@ export function Hero({ onAddToCart }: HeroProps) {
     </section>
   );
 }
+```
 
-### File 4 of 17: /components/Product.tsx
+### File 5 of 18: /components/Product.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const FEATURES = [
   {
@@ -364,47 +622,24 @@ const FEATURES = [
 ];
 
 export function Product() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("product");
 
   return (
     <section
-      ref={sectionRef}
       id="product"
       data-theme="dark"
-      className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(80px,12vh,160px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 overflow-hidden bg-[#0C0C0C] px-gutter py-12 sm:py-16 md:py-20 lg:py-28 text-[#F4F3EF]"
     >
       <div
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         {/* Eyebrow Meta: 02 —— PRODUCT */}
-        <div className="mb-[clamp(24px,4vh,44px)] flex items-center gap-[14px]">
+        <div className="mb-4 sm:mb-6 md:mb-8 flex items-center gap-[14px]">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
             02
           </span>
@@ -416,18 +651,18 @@ export function Product() {
 
         {/* Section Headline & Description */}
         <div className="w-full">
-          <h2 className="m-0 font-sans text-[clamp(2.7rem,8vw,8rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.045em] text-[#F4F3EF]">
+          <h2 className="m-0 font-sans text-[clamp(2.4rem,7vw,8rem)] font-extrabold uppercase leading-[0.88] tracking-[-0.045em] text-[#F4F3EF]">
             NOT JUST
             <br />
             SOUND.
           </h2>
-          <p className="mt-[22px] max-w-[430px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+          <p className="mt-4 sm:mt-5 max-w-[430px] font-sans text-[13px] sm:text-[14px] font-normal leading-[1.65] text-[#B9BCC0]">
             AERON ARC is engineered around the way you actually experience sound — not around a spec sheet.
           </p>
         </div>
 
         {/* Middle Video Container (Using existing Section 2 video) */}
-        <div className="relative my-[clamp(32px,6vh,72px)] h-[clamp(320px,46vw,672px)] w-full overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
+        <div className="relative my-6 sm:my-8 md:my-12 aspect-[16/10] sm:aspect-[16/9] w-full max-h-[672px] overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
           <video
             autoPlay
             muted
@@ -439,7 +674,7 @@ export function Product() {
             <source src={media.section2Video} type="video/mp4" />
           </video>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0C0C0C]/70 via-transparent to-transparent" />
-          <div className="absolute bottom-6 left-6 font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E]">
+          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 font-mono text-[9px] sm:text-[10.5px] tracking-[0.2em] text-[#D8FF3E]">
             FIG 02.1 — ACTIVE TRANSDUCER
           </div>
         </div>
@@ -469,52 +704,31 @@ export function Product() {
     </section>
   );
 }
+```
 
-### File 5 of 17: /components/Experience.tsx
+### File 6 of 18: /components/Experience.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Experience() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("experience");
 
   return (
     <section
-      ref={sectionRef}
       id="experience"
       data-theme="dark"
-      className="relative overflow-hidden bg-[#080808] px-gutter py-[clamp(90px,14vh,180px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 overflow-hidden bg-[#080808] px-gutter py-12 sm:py-16 md:py-20 lg:py-28 text-[#F4F3EF]"
     >
       <div
-        className={`relative mx-auto h-[clamp(520px,92svh,940px)] w-full overflow-hidden rounded-3xl transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`relative mx-auto min-h-[440px] h-[65svh] sm:h-[75svh] md:h-[clamp(520px,85svh,940px)] max-h-[940px] w-full overflow-hidden rounded-2xl sm:rounded-3xl transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         <video
@@ -529,13 +743,13 @@ export function Experience() {
         </video>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,#080808_100%)]" />
 
-        <div className="absolute inset-0 flex flex-col justify-between p-8 sm:p-14">
-          <span className="font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
+        <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-10 md:p-14">
+          <span className="font-mono text-[10.5px] sm:text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
             03 EXPERIENCE
           </span>
 
           <div className="max-w-[700px]">
-            <h2 className="font-sans text-[clamp(32px,5vw,78px)] font-black tracking-[-0.03em] leading-[0.92] uppercase">
+            <h2 className="font-sans text-[clamp(28px,5vw,78px)] font-black tracking-[-0.03em] leading-[0.94] uppercase">
               Lose yourself <br />
               <span className="font-serif font-light italic">in the sound.</span>
             </h2>
@@ -552,41 +766,22 @@ export function Experience() {
     </section>
   );
 }
+```
 
-### File 6 of 17: /components/Technology.tsx
+### File 7 of 18: /components/Technology.tsx
 
+```tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Technology() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLImageElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, elementRef: contentRef } = useSectionTransition("technology");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -614,6 +809,7 @@ export function Technology() {
       mouse.x = e.clientX / window.innerWidth;
       mouse.y = e.clientY / window.innerHeight;
 
+      // Smooth subtle parallax on the Figma hero background image
       if (bg) {
         const dx = (e.clientX / window.innerWidth - 0.5) * 14;
         const dy = (e.clientY / window.innerHeight - 0.5) * 10;
@@ -680,8 +876,9 @@ export function Technology() {
       id="technology"
       data-theme="dark"
       ref={containerRef}
-      className="relative h-[712px] min-h-[640px] xl:h-[712px] overflow-hidden bg-[#080808] px-gutter py-[clamp(48px,8vh,84px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 min-h-[460px] sm:min-h-[540px] md:min-h-[620px] lg:h-[712px] overflow-hidden bg-[#080808] px-gutter py-12 sm:py-16 md:py-20 lg:py-[clamp(48px,8vh,84px)] text-[#F4F3EF] flex flex-col justify-between"
     >
+      {/* Figma Exact Background Image (Node 1:265) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
           ref={bgRef}
@@ -689,10 +886,12 @@ export function Technology() {
           alt="AERON ARC Spatial Engine"
           className="h-full w-full object-cover object-center scale-105 transition-transform duration-300 ease-out"
         />
+        {/* Subtle Vignette Overlays matching Figma */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-transparent to-[#080808]/40" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#080808]/70 via-transparent to-[#080808]/70" />
       </div>
 
+      {/* Interactive Sound-Wave Canvas Layer */}
       <canvas
         ref={canvasRef}
         className="pointer-events-none absolute inset-0 z-[1] h-full w-full opacity-60 mix-blend-screen"
@@ -700,13 +899,16 @@ export function Technology() {
 
       {/* Content Container (Figma Node 1:266) */}
       <div
-        className={`relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={contentRef}
+        className={`relative z-[2] mx-auto flex h-full w-full max-w-[1424px] flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
+        {/* Top Block: Eyebrow + 3-line Stacked Headline */}
         <div>
+          {/* Eyebrow Meta: 04 —— SPATIAL ENGINE */}
           <div className="flex items-center gap-[14px]">
             <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
               04
@@ -717,8 +919,9 @@ export function Technology() {
             </span>
           </div>
 
-          <div className="mt-[34px] max-w-[532px]">
-            <h2 className="m-0 font-sans text-[clamp(42px,6.25vw,96px)] font-extrabold uppercase leading-[1.12] tracking-[-0.06em] text-[#F4F3EF]">
+          {/* Headline (Figma Node 1:276 - exactly 532px max width) */}
+          <div className="mt-5 sm:mt-7 md:mt-[34px] max-w-[532px]">
+            <h2 className="m-0 font-sans text-[clamp(32px,5.8vw,96px)] font-extrabold uppercase leading-[1.08] tracking-[-0.05em] text-[#F4F3EF]">
               SOUND
               <br />
               WITHOUT
@@ -728,12 +931,13 @@ export function Technology() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-6 pt-6">
-          <p className="m-0 max-w-[400px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+        {/* Bottom Block: Description + Move Cursor Hint */}
+        <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6 pt-6 sm:pt-8">
+          <p className="m-0 max-w-[400px] font-sans text-[13px] sm:text-[14px] font-normal leading-[1.65] text-[#B9BCC0]">
             AERON ARC creates a dimensional soundstage that responds naturally to your movement. Turn your head and the room stays where it is.
           </p>
 
-          <div className="font-mono text-[10px] font-normal uppercase leading-[2.1] tracking-[0.18em] text-[#B9BCC0]/60 text-right">
+          <div className="font-mono text-[9.5px] sm:text-[10px] font-normal uppercase leading-[1.8] sm:leading-[2.1] tracking-[0.18em] text-[#B9BCC0]/60 sm:text-right">
             MOVE YOUR CURSOR
             <br />
             TO SHIFT THE FIELD
@@ -743,46 +947,24 @@ export function Technology() {
     </section>
   );
 }
+```
 
-### File 7 of 17: /components/Precision.tsx
+### File 8 of 18: /components/Precision.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Precision() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("engineering");
 
   return (
     <section
-      ref={sectionRef}
       id="engineering"
       data-theme="dark"
-      className="relative min-h-[875px] overflow-hidden bg-[#151515] px-gutter py-[clamp(64px,9vh,97px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 overflow-hidden bg-[#151515] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 lg:min-h-[875px] text-[#F4F3EF]"
     >
       {/* Background Architectural Ray / Stage Image from Figma */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -795,13 +977,16 @@ export function Precision() {
       </div>
 
       <div
-        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
+        {/* Top Header: Eyebrow + Built with Precision */}
         <div className="w-full">
+          {/* Eyebrow Meta: 05 —— ENGINEERING */}
           <div className="flex items-center gap-[14px]">
             <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
               05
@@ -812,6 +997,7 @@ export function Precision() {
             </span>
           </div>
 
+          {/* Heading (Figma Node 1:292) */}
           <div className="mt-[34px] max-w-[1076px]">
             <h2 className="m-0 font-sans text-[clamp(42px,6.4vw,98px)] font-extrabold uppercase leading-[1.08] tracking-[-0.045em] text-[#F4F3EF]">
               BUILT WITH
@@ -821,41 +1007,46 @@ export function Precision() {
           </div>
         </div>
 
-        <div className="mt-[clamp(40px,7vh,90px)] grid items-center gap-8 lg:grid-cols-12">
-          <div className="flex flex-col gap-10 lg:col-span-4">
+        {/* Center Showcase: Specs on Left, Macro Product in Center, Specs on Right */}
+        <div className="mt-8 sm:mt-12 lg:mt-[clamp(40px,7vh,90px)] grid items-center gap-8 lg:grid-cols-12">
+          {/* Left Column: Spec 01 & Spec 02 */}
+          <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 lg:col-span-4">
+            {/* Spec 01: Titanium acoustic chamber */}
             <div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
                   01
                 </span>
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
                   TITANIUM ACOUSTIC CHAMBER
                 </span>
                 <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
               </div>
-              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
                 0.4 mm walls, vacuum-sealed. Resonance measured in single decibels.
               </p>
             </div>
 
+            {/* Spec 02: Adaptive driver */}
             <div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
                   02
                 </span>
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
                   ADAPTIVE DRIVER
                 </span>
                 <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
               </div>
-              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
                 11 mm dual-layer diaphragm that stiffens under load.
               </p>
             </div>
           </div>
 
-          <div className="flex justify-center lg:col-span-4">
-            <div className="relative w-full max-w-[444px]">
+          {/* Center Column: Macro Floating Earbuds Image from Figma */}
+          <div className="my-2 flex justify-center lg:my-0 lg:col-span-4">
+            <div className="relative w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[444px]">
               <img
                 src={media.precisionMacro}
                 alt="AERON ARC Precision Engineering"
@@ -864,33 +1055,42 @@ export function Precision() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-10 lg:col-span-4 lg:items-end">
-            <div className="w-full lg:text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+          {/* Right Column: Spec 03 & Spec 04 */}
+          <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 lg:col-span-4 lg:items-end">
+            {/* Spec 03: Micro sensor array */}
+            <div className="w-full text-left lg:text-right">
+              <div className="flex items-center justify-start gap-3 lg:justify-end">
+                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block lg:order-1" />
+                <span className="lg:hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                  03
+                </span>
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF] lg:order-2">
                   MICRO SENSOR ARRAY
                 </span>
-                <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                <span className="hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E] lg:inline lg:order-3">
                   03
                 </span>
               </div>
-              <p className="mt-2 max-w-[280px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pr-[26px]">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pl-0 lg:pr-[26px]">
                 Six-axis motion, optical wear detection, bone conduction pickup.
               </p>
             </div>
 
-            <div className="w-full lg:text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+            {/* Spec 04: Ceramic composite shell */}
+            <div className="w-full text-left lg:text-right">
+              <div className="flex items-center justify-start gap-3 lg:justify-end">
+                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block lg:order-1" />
+                <span className="lg:hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                  04
+                </span>
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF] lg:order-2">
                   CERAMIC COMPOSITE SHELL
                 </span>
-                <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                <span className="hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E] lg:inline lg:order-3">
                   04
                 </span>
               </div>
-              <p className="mt-2 max-w-[280px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pr-[26px]">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pl-0 lg:pr-[26px]">
                 Scratch-hardened to 8H. Warm to the touch within seconds.
               </p>
             </div>
@@ -900,13 +1100,16 @@ export function Precision() {
     </section>
   );
 }
+```
 
-### File 8 of 17: /components/ExplodedView.tsx
+### File 9 of 18: /components/ExplodedView.tsx
 
+```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import { explodedParts, masterPart, PART_BOUNDS } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const CALLOUTS = [
   { num: "02", title: "Outer ceramic shell", desc: "STRUCTURAL PROTECTION" },
@@ -921,6 +1124,7 @@ const CALLOUTS = [
 
 export function ExplodedView() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { isVisible } = useSectionTransition("exploded", sectionRef);
   const stageRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -953,6 +1157,7 @@ export function ExplodedView() {
     let expNarrow: boolean | null = null;
     let expTw = -1;
 
+    // ---- Ambient Particles Canvas
     let pCtx: CanvasRenderingContext2D | null = null;
     let pw = 0,
       ph = 0;
@@ -994,11 +1199,11 @@ export function ExplodedView() {
         expNarrow = narrow;
         if (narrow) {
           zone.style.left = "0px";
-          zone.style.top = "32%";
+          zone.style.top = "28%";
           zone.style.bottom = "16%";
-          head.style.top = "clamp(84px,13vh,150px)";
+          head.style.top = "clamp(88px, 11vh, 104px)";
           head.style.transform = "none";
-          head.style.maxWidth = "92vw";
+          head.style.maxWidth = "min(92vw, 480px)";
         } else {
           zone.style.left = "clamp(0px,37vw,600px)";
           zone.style.top = "12%";
@@ -1012,6 +1217,7 @@ export function ExplodedView() {
       const zn = zone.getBoundingClientRect();
       const n = parts.length;
 
+      // Equal opaque width for uniform cadence
       const tw = narrow ? clamp(zn.width * 0.44, 92, 270) : clamp(zn.width * 0.235, 96, 250);
       let stepX = narrow ? tw * 0.1 : tw * 0.46;
       let stepY = narrow ? tw * 0.42 : stepX * 0.56;
@@ -1036,8 +1242,8 @@ export function ExplodedView() {
         if (master) setH(master, "part-01-master");
       }
 
-      const sepRaw = clamp((p - 0.06) / 0.76, 0, 1);
-      const appear = clamp((p - 0.02) / 0.07, 0, 1);
+      const sepRaw = clamp((p - 0.05) / 0.78, 0, 1);
+      const appear = clamp(sepRaw / 0.1, 0, 1);
 
       const place = (el: HTMLElement, key: string, dx: number, dy: number) => {
         const b = PART_BOUNDS[key];
@@ -1065,7 +1271,7 @@ export function ExplodedView() {
       });
 
       if (master) {
-        master.style.opacity = String(clamp(1 - p / 0.07, 0, 1));
+        master.style.opacity = String(clamp(1 - sepRaw / 0.12, 0, 1));
         master.style.transform = place(master, "part-01-master", 0, 0);
       }
 
@@ -1121,6 +1327,7 @@ export function ExplodedView() {
         }
       }
 
+      // Render Ambient Micro-Particles
       if (pCtx && pCanvas) {
         if (r.bottom > 0 && r.top < vh) {
           pCtx.clearRect(0, 0, pw, ph);
@@ -1151,40 +1358,49 @@ export function ExplodedView() {
   return (
     <section
       ref={sectionRef}
+      id="exploded"
       data-theme="dark"
       data-exploded
-      className="relative h-[540vh] bg-[#0B0B0B] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 h-[280vh] sm:h-[360vh] md:h-[450vh] lg:h-[540vh] bg-[#0B0B0B] text-[#F4F3EF]"
     >
       <div
         ref={stageRef}
         data-stage
         className="sticky top-0 h-svh overflow-hidden bg-[#0B0B0B]"
       >
+        {/* Background Ambient Radial Glow */}
         <div className="absolute inset-0 bg-[radial-gradient(52%_54%_at_62%_48%,rgba(66,65,62,0.44),rgba(11,11,11,0)_70%)]" />
+
+        {/* Concentric Architectural Rings */}
         <div className="pointer-events-none absolute left-[-26%] top-[-48%] h-[150%] w-[126%] rounded-full border border-[rgba(244,243,239,0.032)]" />
         <div className="pointer-events-none absolute bottom-[-74%] left-[4%] h-[140%] w-[118%] rounded-full border border-[rgba(244,243,239,0.026)]" />
 
+        {/* Floating Particles Canvas */}
         <canvas
           ref={particlesCanvasRef}
           className="pointer-events-none absolute inset-0 z-0 opacity-50"
         />
 
+        {/* Vignette Gradients */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(11,11,11,0.7)_0%,rgba(11,11,11,0)_24%,rgba(11,11,11,0)_74%,rgba(11,11,11,0.82)_100%)]" />
 
+        {/* 3D Exploded Parts Stage */}
         <div
           ref={zoneRef}
           data-parts-zone
           className="absolute bottom-[22%] left-[clamp(0px,37vw,600px)] right-0 top-[12%]"
         >
+          {/* Fully Assembled Master Pod */}
           <img
             ref={masterRef}
             data-part-master
             src={masterPart.src}
             alt={masterPart.alt}
-            className="absolute left-1/2 top-1/2 z-[9] -translate-x-1/2 -translate-y-1/2 max-w-none filter drop-shadow-[0_30px_48px_rgba(0,0,0,0.72)]"
+            className="absolute left-1/2 top-1/2 z-[9] max-w-none filter drop-shadow-[0_30px_48px_rgba(0,0,0,0.72)]"
             style={{ height: "26vmin", width: "auto" }}
           />
 
+          {/* 8 Disassembled Components */}
           {explodedParts.map((part) => (
             <div
               key={part.id}
@@ -1203,6 +1419,7 @@ export function ExplodedView() {
           ))}
         </div>
 
+        {/* SVG Callout Pointer Line */}
         <svg
           data-callout-svg
           className="pointer-events-none absolute inset-0 z-[34] overflow-visible"
@@ -1219,6 +1436,7 @@ export function ExplodedView() {
           />
         </svg>
 
+        {/* Interactive Callout Badges */}
         <div
           data-callout-layer
           className="pointer-events-none absolute inset-0 z-[36]"
@@ -1242,83 +1460,77 @@ export function ExplodedView() {
           ))}
         </div>
 
+        {/* Left Information Column (white.html spec) */}
         <div
           ref={headRef}
           data-anatomy-head
-          className="absolute left-[clamp(16px,4vw,56px)] top-1/2 z-[40] max-w-[clamp(240px,30vw,430px)] -translate-y-1/2"
+          className="absolute left-[clamp(16px,4vw,56px)] top-1/2 z-[40] max-w-[clamp(240px,30vw,430px)] pointer-events-none"
         >
-          <div className="mb-[22px] flex items-center gap-[14px] font-mono text-[10.5px] tracking-[0.22em] text-[#B9BCC0]">
-            <span className="text-[#D8FF3E]">06</span>
-            <span className="h-[1px] w-[54px] bg-[#B9BCC0]/40" />
-            <span>ANATOMY</span>
-          </div>
+          <div
+            className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-16 opacity-0"
+            }`}
+          >
+            {/* Eyebrow: 06 —— ANATOMY */}
+            <div className="mb-2 sm:mb-4 md:mb-[22px] flex items-center gap-[14px] font-mono text-[10px] sm:text-[10.5px] tracking-[0.22em] text-[#B9BCC0]">
+              <span className="text-[#D8FF3E]">06</span>
+              <span className="h-[1px] w-[54px] bg-[#B9BCC0]/40" />
+              <span>ANATOMY</span>
+            </div>
 
-          <h2 className="m-0 font-sans text-[clamp(1.9rem,4.4vw,4.2rem)] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] text-[#F4F3EF]">
-            Every layer
-            <br />
-            has a purpose.
-          </h2>
+            {/* Headline */}
+            <h2 className="m-0 font-sans text-[clamp(1.5rem,3.8vw,4.2rem)] font-extrabold uppercase leading-[0.92] tracking-[-0.04em] text-[#F4F3EF]">
+              Every layer
+              <br />
+              has a purpose.
+            </h2>
 
-          <p className="mt-[24px] font-mono text-[10.5px] leading-[1.9] tracking-[0.18em] text-[#B9BCC0]/85 uppercase">
-            ENGINEERED FROM
-            <br />
-            THE INSIDE OUT.
-          </p>
+            {/* Subtitle */}
+            <p className="mt-2 sm:mt-3 md:mt-[24px] font-mono text-[9.5px] sm:text-[10.5px] leading-[1.6] sm:leading-[1.9] tracking-[0.18em] text-[#B9BCC0]/85 uppercase">
+              ENGINEERED FROM
+              <br />
+              THE INSIDE OUT.
+            </p>
 
-          <div className="mt-[34px] flex h-[6px] items-end gap-[7px]">
-            {CALLOUTS.map((_, i) => (
-              <span
-                key={i}
-                data-part-step={i}
-                className="h-[1px] w-[15px] bg-[rgba(244,243,239,0.22)] transition-all duration-450 ease-out"
-              />
-            ))}
-          </div>
+            {/* 8 Component Step Indicator Bars */}
+            <div className="mt-2 sm:mt-4 md:mt-[34px] flex h-[6px] items-end gap-[5px] sm:gap-[7px]">
+              {CALLOUTS.map((_, i) => (
+                <span
+                  key={i}
+                  data-part-step={i}
+                  className="h-[1px] w-[12px] sm:w-[15px] bg-[rgba(244,243,239,0.22)] transition-all duration-450 ease-out"
+                />
+              ))}
+            </div>
 
-          <div className="mt-[14px] font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/60">
-            <span ref={idxRef}>01</span> / 08 &nbsp;·&nbsp;{" "}
-            <span ref={pctRef}>000</span>% SEPARATED
+            {/* Disassembly Readout */}
+            <div className="mt-1.5 sm:mt-2 md:mt-[14px] font-mono text-[9px] sm:text-[10px] tracking-[0.2em] text-[#B9BCC0]/60">
+              <span ref={idxRef}>01</span> / 08 &nbsp;·&nbsp;{" "}
+              <span ref={pctRef}>000</span>% SEPARATED
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
+```
 
-### File 9 of 17: /components/Battery.tsx
+### File 10 of 18: /components/Battery.tsx
 
+```tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Battery() {
   const barRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, elementRef: contentRef } = useSectionTransition("battery");
 
   useEffect(() => {
     const onScroll = () => {
@@ -1338,20 +1550,25 @@ export function Battery() {
 
   return (
     <section
-      ref={sectionRef}
+      id="battery"
       data-theme="light"
-      className="relative bg-[#F4F3EF] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#080808]"
+      className="relative scroll-mt-20 md:scroll-mt-24 bg-[#F4F3EF] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 text-[#080808]"
     >
       <div
-        ref={containerRef}
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={(el) => {
+          if (containerRef) (containerRef as any).current = el;
+          if (contentRef) (contentRef as any).current = el;
+        }}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="grid grid-cols-1 items-center gap-8 sm:gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* Left Column */}
           <div className="lg:col-span-7">
+            {/* Eyebrow */}
             <div className="flex items-center gap-3.5">
               <span className="rounded bg-[#080808] px-1.5 py-0.5 font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
                 07
@@ -1362,14 +1579,17 @@ export function Battery() {
               </span>
             </div>
 
+            {/* Heading */}
             <h2 className="mt-6 font-sans text-[clamp(44px,5.6vw,86px)] font-[800] leading-[1.05] tracking-[-0.06em] text-[#080808]">
               Power that stays with you.
             </h2>
 
+            {/* Paragraph */}
             <p className="mt-6 max-w-[380px] font-sans text-[14px] leading-[1.7] text-[#4A4A47]">
               Designed for long days, late nights and everything between.
             </p>
 
+            {/* Stat Cards */}
             <div className="mt-10 grid grid-cols-1 border border-[#080808]/15 bg-[#F4F3EF] sm:grid-cols-3 sm:divide-x divide-y sm:divide-y-0 divide-[#080808]/15">
               <div className="p-6">
                 <div className="font-sans text-[clamp(36px,3.5vw,54.4px)] font-[800] leading-none tracking-[-0.04em] text-[#080808]">
@@ -1399,6 +1619,7 @@ export function Battery() {
               </div>
             </div>
 
+            {/* Battery Tracker Bar */}
             <div className="mt-8">
               <div className="h-[3px] w-full overflow-hidden bg-[#080808]/12">
                 <div
@@ -1416,6 +1637,7 @@ export function Battery() {
             </div>
           </div>
 
+          {/* Right Column: Charging Pod Image from Figma */}
           <div className="flex items-center justify-center lg:col-span-5 lg:justify-end">
             <div className="relative aspect-[492/590] w-full max-w-[492px]">
               <img
@@ -1430,12 +1652,14 @@ export function Battery() {
     </section>
   );
 }
+```
 
-### File 10 of 17: /components/Acoustics.tsx
+### File 11 of 18: /components/Acoustics.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const systems = [
   {
@@ -1461,44 +1685,23 @@ const systems = [
 ];
 
 export function Acoustics() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("intelligence");
 
   return (
     <section
-      ref={sectionRef}
+      id="intelligence"
       data-theme="dark"
-      className="relative bg-[#080808] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 bg-[#080808] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 text-[#F4F3EF]"
     >
       <div
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
+        {/* Eyebrow */}
         <div className="flex items-center gap-3.5">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
             08
@@ -1509,32 +1712,34 @@ export function Acoustics() {
           </span>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 items-end gap-6 lg:grid-cols-12">
+        {/* Header Row */}
+        <div className="mt-6 sm:mt-8 grid grid-cols-1 items-end gap-4 sm:gap-6 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <h2 className="font-sans text-[clamp(44px,6.25vw,96px)] font-[800] leading-[1.05] tracking-[-0.055em] text-[#F4F3EF]">
+            <h2 className="font-sans text-[clamp(32px,5.8vw,96px)] font-[800] leading-[1.05] tracking-[-0.055em] text-[#F4F3EF]">
               It listens with you.
             </h2>
           </div>
           <div className="lg:col-span-5 lg:pb-3 lg:pl-8">
-            <p className="max-w-[340px] font-sans text-[14px] leading-[1.7] text-[#B9BCC0]">
+            <p className="max-w-[340px] font-sans text-[13px] sm:text-[14px] leading-[1.65] text-[#B9BCC0]">
               Four systems running quietly in the background, adjusting the sound before you notice it needed adjusting.
             </p>
           </div>
         </div>
 
-        <div className="mt-14 border-t border-white/10">
+        {/* 4 Systems Rows */}
+        <div className="mt-8 sm:mt-12 md:mt-14 border-t border-white/10">
           {systems.map((s) => (
             <div
               key={s.id}
-              className="grid grid-cols-1 items-center gap-3 border-b border-white/10 py-7 transition-colors hover:bg-white/[0.02] md:grid-cols-12"
+              className="grid grid-cols-1 items-baseline sm:items-center gap-2 sm:gap-3 border-b border-white/10 py-4 sm:py-5 md:py-7 transition-colors hover:bg-white/[0.02] md:grid-cols-12"
             >
               <div className="font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E] md:col-span-1">
                 {s.id}
               </div>
-              <div className="font-sans text-[clamp(22px,2.2vw,32px)] font-[700] tracking-[-0.02em] text-[#F4F3EF] md:col-span-5">
+              <div className="font-sans text-[clamp(18px,2.2vw,32px)] font-[700] tracking-[-0.02em] text-[#F4F3EF] md:col-span-5">
                 {s.title}
               </div>
-              <div className="font-sans text-[12.5px] leading-[1.7] text-[#B9BCC0]/85 md:col-span-6">
+              <div className="font-sans text-[12px] sm:text-[12.5px] leading-[1.65] text-[#B9BCC0]/85 md:col-span-6">
                 {s.desc}
               </div>
             </div>
@@ -1544,92 +1749,127 @@ export function Acoustics() {
     </section>
   );
 }
+```
 
-### File 11 of 17: /components/Gallery.tsx
+### File 12 of 18: /components/Gallery.tsx
 
+```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
 import { gallerySlides } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
+
+const SLIDE_CONFIG = [
+  { widthClass: "w-[clamp(260px,40vw,600px)]", caption: "01 / MORNING" },
+  { widthClass: "w-[clamp(200px,28vw,420px)]", caption: "02 / MOVEMENT" },
+  { widthClass: "w-[clamp(240px,34vw,520px)]", caption: "03 / FOCUS" },
+  { widthClass: "w-[clamp(260px,40vw,600px)]", caption: "04 / NIGHT" },
+  { widthClass: "w-[clamp(240px,34vw,520px)]", caption: "05 / IMMERSION" },
+];
 
 export function Gallery() {
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const { isVisible } = useSectionTransition("gallery", sectionRef);
 
   useEffect(() => {
     const sec = sectionRef.current;
     const track = trackRef.current;
     if (!sec || !track) return;
 
+    let rafId: number;
+
     const onScroll = () => {
       const vh = window.innerHeight;
       const r = sec.getBoundingClientRect();
       const p = Math.min(Math.max(-r.top / Math.max(1, r.height - vh), 0), 1);
-      const dist = Math.max(0, track.scrollWidth - window.innerWidth + 40);
+      // Measure total overflow distance including horizontal padding
+      const dist = Math.max(0, track.scrollWidth - window.innerWidth + 56);
       track.style.transform = `translate3d(${(-p * dist).toFixed(1)}px, 0, 0)`;
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    const handleScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(onScroll);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
     onScroll();
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      data-theme="dark"
+      id="gallery"
+      data-theme="light"
       data-hgallery
-      className="relative h-[360vh] bg-[#0C0C0C] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 h-[360vh] bg-[#EAE9E4] text-[#121212]"
     >
-      <div className="sticky top-0 flex h-svh flex-col justify-between overflow-hidden px-gutter py-12">
-        <div className="flex items-center justify-between font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
-          <span>09 A DAY IN ARC</span>
-          <span className="text-mute">HORIZONTAL SCROLL MATRIX</span>
-        </div>
-
+      <div className="sticky top-0 flex h-svh flex-col justify-center overflow-hidden">
         <div
-          ref={trackRef}
-          data-hgallery-track
-          className="flex items-center gap-8 will-change-transform"
+          className={`flex flex-col justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isVisible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-8 opacity-0"
+          }`}
         >
-          {gallerySlides.map((slide) => (
-            <div
-              key={slide.id}
-              className="relative aspect-[16/10] w-[clamp(320px,68vw,780px)] flex-shrink-0 overflow-hidden rounded-2xl bg-[#151515]"
-            >
-              <img
-                src={slide.img}
-                alt={slide.title}
-                className="h-full w-full object-cover filter brightness-[0.82] contrast-[1.05]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <span className="font-mono text-xs text-[#D8FF3E]">{slide.tag}</span>
-                <h3 className="mt-1 font-sans text-xl font-bold sm:text-2xl">{slide.title}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
+          {/* Eyebrow Header: 09 —— A DAY IN ARC (Figma / white.html match) */}
+          <div className="mb-[clamp(20px,3vh,36px)] flex items-center gap-3.5 px-[clamp(16px,4vw,56px)] font-mono text-[10.5px] tracking-[0.22em] text-[#55554F]">
+            <span className="text-[#121212]">09</span>
+            <span className="h-[1px] w-[54px] bg-[#121212]/30" />
+            <span>A DAY IN ARC</span>
+          </div>
 
-        <div className="font-mono text-[10px] tracking-widest text-mute">
-          DRAG OR SCROLL VERTICALLY TO SCRUB
+          {/* Horizontal Editorial Track */}
+          <div
+            ref={trackRef}
+            data-hgallery-track
+            className="flex items-center gap-[clamp(14px,2vw,32px)] px-[clamp(16px,4vw,56px)] will-change-transform"
+          >
+            {gallerySlides.map((slide, i) => {
+              const cfg = SLIDE_CONFIG[i % SLIDE_CONFIG.length];
+              return (
+                <figure
+                  key={slide.id}
+                  className={`m-0 flex-none ${cfg.widthClass}`}
+                >
+                  <div className="h-[clamp(300px,54svh,620px)] overflow-hidden bg-[#141414]">
+                    <img
+                      src={slide.img}
+                      alt={slide.title}
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+                    />
+                  </div>
+                  <figcaption className="mt-3.5 font-mono text-[10.5px] tracking-[0.2em] text-[#55554F]">
+                    {cfg.caption}
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+```
 
-### File 12 of 17: /components/Finishes.tsx
+### File 13 of 18: /components/Finishes.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { FINISHES, media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 type Props = {
   onAddToCart: () => void;
@@ -1637,52 +1877,29 @@ type Props = {
 
 export function Finishes({ onAddToCart }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
+  const { isVisible, sectionRef } = useSectionTransition("finishes");
   const active = FINISHES[activeIdx];
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <section
-      ref={sectionRef}
-      id="support"
+      id="finishes"
       data-theme="light"
-      className="relative bg-[#F4F3EF] px-gutter py-[clamp(90px,14vh,180px)] text-[#080808]"
+      className="relative scroll-mt-20 md:scroll-mt-24 bg-[#F4F3EF] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 text-[#080808]"
     >
       <div
-        className={`mx-auto max-w-[1560px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`mx-auto max-w-[1560px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
-        <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
+        <div className="grid gap-8 sm:gap-10 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-5">
-            <span className="font-mono text-[11px] tracking-[0.24em] text-[#080808]/60 uppercase">
+            <span className="font-mono text-[10.5px] sm:text-[11px] tracking-[0.24em] text-[#080808]/60 uppercase">
               10 FINISHES
             </span>
-            <h2 className="mt-4 font-sans text-[clamp(36px,5.6vw,84px)] font-black tracking-[-0.03em] leading-[0.92] uppercase">
+            <h2 className="mt-3 sm:mt-4 font-sans text-[clamp(32px,5.2vw,84px)] font-black tracking-[-0.03em] leading-[0.94] uppercase">
               Three finishes. <br />
               <span className="font-serif font-light italic text-[#080808]/70">One form.</span>
             </h2>
@@ -1690,7 +1907,8 @@ export function Finishes({ onAddToCart }: Props) {
               {active.note}
             </p>
 
-            <div className="mt-8 flex gap-3">
+            {/* Finishes Selector Tabs */}
+            <div className="mt-6 sm:mt-8 flex flex-wrap gap-2 sm:gap-3">
               {FINISHES.map((f, i) => (
                 <button
                   key={f.name}
@@ -1698,7 +1916,7 @@ export function Finishes({ onAddToCart }: Props) {
                   data-cursor="SELECT"
                   data-magnetic
                   onClick={() => setActiveIdx(i)}
-                  className={`rounded-full border px-5 py-2 font-mono text-xs tracking-widest transition-colors ${
+                  className={`rounded-full border px-4 sm:px-5 py-2 font-mono text-[11px] sm:text-xs tracking-widest transition-colors ${
                     i === activeIdx
                       ? "border-[#080808] bg-[#080808] text-[#F4F3EF]"
                       : "border-black/20 text-[#080808] hover:border-black"
@@ -1709,20 +1927,21 @@ export function Finishes({ onAddToCart }: Props) {
               ))}
             </div>
 
-            <div className="mt-10 flex items-center gap-6 border-t border-black/10 pt-8">
+            <div className="mt-6 sm:mt-8 md:mt-10 flex items-center gap-6 border-t border-black/10 pt-6 sm:pt-8">
               <button
                 type="button"
                 onClick={onAddToCart}
                 data-cursor="BUY"
                 data-magnetic
-                className="rounded-full bg-[#080808] px-8 py-3.5 font-mono text-xs font-bold tracking-widest text-[#F4F3EF] hover:bg-black/80"
+                className="w-full sm:w-auto rounded-full bg-[#080808] px-8 py-3.5 font-mono text-xs font-bold tracking-widest text-[#F4F3EF] hover:bg-black/80"
               >
                 ADD TO CART — $249
               </button>
             </div>
           </div>
 
-          <div className="relative aspect-square overflow-hidden rounded-3xl bg-[#EAE9E4] p-10 lg:col-span-7">
+          {/* Dynamic Filtered Product Preview */}
+          <div className="relative aspect-square overflow-hidden rounded-2xl sm:rounded-3xl bg-[#EAE9E4] p-6 sm:p-8 md:p-10 lg:col-span-7">
             <img
               src={media.finishObsidian}
               alt={active.name}
@@ -1735,50 +1954,30 @@ export function Finishes({ onAddToCart }: Props) {
     </section>
   );
 }
+```
 
-### File 13 of 17: /components/FinalCTA.tsx
+### File 14 of 18: /components/FinalCTA.tsx
 
+```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 type Props = {
   onAddToCart?: () => void;
 };
 
 export function FinalCTA({ onAddToCart }: Props) {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("cta");
 
   return (
     <section
-      ref={sectionRef}
+      id="cta"
       data-theme="dark"
-      className="relative flex min-h-[695px] items-center justify-center overflow-hidden bg-[#050505] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 flex min-h-[440px] sm:min-h-[520px] md:min-h-[600px] lg:min-h-[695px] items-center justify-center overflow-hidden bg-[#050505] text-[#F4F3EF]"
     >
+      {/* Background Image from Figma (node 1:427) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
           src={media.finalCtaBg}
@@ -1788,28 +1987,30 @@ export function FinalCTA({ onAddToCart }: Props) {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,5,5,0.35)_0%,rgba(5,5,5,0.85)_75%,#050505_100%)]" />
       </div>
 
+      {/* Content Container (841px in Figma) */}
       <div
-        className={`relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-[clamp(20px,3.65vw,56px)] py-[clamp(80px,7.24vw,111px)] text-center transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`relative z-10 mx-auto flex w-full max-w-[841px] flex-col items-center px-gutter py-14 sm:py-20 lg:py-28 text-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
-        <h2 className="font-sans text-[clamp(48px,7vw,108px)] font-[900] leading-[0.92] tracking-[0.037em] text-[#F4F3EF]">
+        <h2 className="font-sans text-[clamp(34px,6.5vw,108px)] font-[900] leading-[0.95] tracking-tight sm:tracking-[0.037em] text-[#F4F3EF]">
           Hear what&apos;s next.
         </h2>
 
-        <p className="mt-7 max-w-[400px] font-sans text-[14px] leading-[1.7] text-[#B9BCC0]">
+        <p className="mt-4 sm:mt-6 max-w-[400px] font-sans text-[13px] sm:text-[14px] leading-[1.65] text-[#B9BCC0]">
           A new generation of wireless audio, built around how the world sounds to you.
         </p>
 
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={onAddToCart}
             data-cursor="ORDER"
             data-magnetic
-            className="rounded-full bg-[#F4F3EF] px-[30px] py-4 font-mono text-[11px] font-[600] leading-none tracking-[0.16em] text-[#080808] transition-transform duration-300 ease-out hover:scale-105 active:scale-95"
+            className="w-full sm:w-auto rounded-full bg-[#F4F3EF] px-[30px] py-4 font-mono text-[11px] font-[600] leading-none tracking-[0.16em] text-[#080808] transition-transform duration-300 ease-out hover:scale-105 active:scale-95"
           >
             BUY AERON ARC — $249
           </button>
@@ -1818,7 +2019,7 @@ export function FinalCTA({ onAddToCart }: Props) {
             href="#technology"
             data-cursor="LEARN"
             data-magnetic
-            className="rounded-full border border-[#F4F3EF]/35 bg-transparent px-[30px] py-4 font-mono text-[11px] font-[400] leading-none tracking-[0.16em] text-[#F4F3EF] transition-colors duration-300 hover:border-[#F4F3EF] hover:bg-white/[0.04]"
+            className="w-full sm:w-auto rounded-full border border-[#F4F3EF]/35 bg-transparent px-[30px] py-4 font-mono text-[11px] font-[400] leading-none tracking-[0.16em] text-[#F4F3EF] transition-colors duration-300 hover:border-[#F4F3EF] hover:bg-white/[0.04]"
           >
             EXPLORE TECHNOLOGY
           </a>
@@ -1827,28 +2028,33 @@ export function FinalCTA({ onAddToCart }: Props) {
     </section>
   );
 }
+```
 
-### File 14 of 17: /components/Footer.tsx
+### File 15 of 18: /components/Footer.tsx
 
+```tsx
 "use client";
 
 export function Footer() {
   return (
     <footer
       data-theme="dark"
-      className="relative border-t border-white/10 bg-[#080808] px-[clamp(20px,3.65vw,56px)] pb-[34px] pt-[62.5px] text-[#F4F3EF]"
+      className="relative border-t border-white/10 bg-[#080808] px-gutter pb-8 sm:pb-[34px] pt-10 sm:pt-[62.5px] text-[#F4F3EF]"
     >
       <div className="mx-auto max-w-[1424px]">
-        <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-10 md:flex-row md:items-end">
-          <div className="select-none font-sans text-[clamp(64px,14.6vw,224px)] font-[900] leading-[0.8] tracking-[-0.05em] text-[#F4F3EF]/[0.05]">
+        {/* Top Watermark & Tagline Row */}
+        <div className="flex flex-col justify-between gap-4 sm:gap-6 border-b border-white/10 pb-6 sm:pb-10 md:flex-row md:items-end">
+          <div className="select-none font-sans text-[clamp(44px,14vw,224px)] font-[900] leading-[0.8] tracking-[-0.05em] text-[#F4F3EF]/[0.05]">
             AERON
           </div>
-          <div className="pb-2 font-mono text-[11px] tracking-[0.2em] text-[#B9BCC0]">
+          <div className="pb-1 sm:pb-2 font-mono text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9BCC0]">
             SOUND, REIMAGINED.
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-10 md:grid-cols-4 md:gap-8">
+        {/* 4-Column Navigation & Spec Grid */}
+        <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-8">
+          {/* Column 1: SHOP */}
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/55 uppercase">
               SHOP
@@ -1866,6 +2072,7 @@ export function Footer() {
             </div>
           </div>
 
+          {/* Column 2: CARE */}
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/55 uppercase">
               CARE
@@ -1886,6 +2093,7 @@ export function Footer() {
             </div>
           </div>
 
+          {/* Column 3: FOLLOW */}
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/55 uppercase">
               FOLLOW
@@ -1918,6 +2126,7 @@ export function Footer() {
             </div>
           </div>
 
+          {/* Column 4: TECHNICAL SPECS */}
           <div className="flex flex-col gap-2 font-mono text-[10px] leading-[19px] tracking-[0.16em] text-[#B9BCC0]/55">
             <div>MODEL / ARC-01</div>
             <div>CODEC / LDAC · AAC · SBC</div>
@@ -1927,6 +2136,7 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Bottom Legal Row */}
         <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-6 font-mono text-[10px] tracking-[0.16em] text-[#B9BCC0]/45 sm:flex-row sm:items-center">
           <div>© 2026 AERON AUDIO LABORATORIES</div>
           <div>DESIGNED FOR THE WAY YOU HEAR</div>
@@ -1935,9 +2145,11 @@ export function Footer() {
     </footer>
   );
 }
+```
 
-### File 15 of 17: /components/CartDrawer.tsx
+### File 16 of 18: /components/CartDrawer.tsx
 
+```tsx
 "use client";
 
 type Props = {
@@ -2000,9 +2212,11 @@ export function CartDrawer({ open, onClose, count }: Props) {
     </div>
   );
 }
+```
 
-### File 16 of 17: /components/CustomCursor.tsx
+### File 17 of 18: /components/CustomCursor.tsx
 
+```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -2058,6 +2272,7 @@ export function CustomCursor() {
     document.addEventListener("mouseleave", onMouseLeave);
     raf = requestAnimationFrame(frame);
 
+    // Magnetic elements listener
     const magneticEls = Array.from(document.querySelectorAll<HTMLElement>("[data-magnetic]"));
     const cleanups = magneticEls.map((el) => {
       const over = (e: MouseEvent) => {
@@ -2101,9 +2316,11 @@ export function CustomCursor() {
     </div>
   );
 }
+```
 
-### File 17 of 17: /components/ScrollProgressBar.tsx
+### File 18 of 18: /components/ScrollProgressBar.tsx
 
+```tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -2140,13 +2357,73 @@ export function ScrollProgressBar() {
     </div>
   );
 }
+```
 
-### Install Dependencies:
+### Install Dependencies (exact versions):
 
-npm install lenis
+```bash
+npm install next@15.5.25 react@19.3.0 react-dom@19.3.0 lenis@1.3.26
+npm install -D tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 typescript@5.9.3 @types/node@22.20.3 @types/react@19.3.0 @types/react-dom@19.3.0
+```
+
+### Project file: /package.json
+
+Replace the contents of /package.json with:
+
+```json
+{
+  "name": "aeron-arc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "lenis": "1.3.26",
+    "next": "15.5.25",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
+  }
+}
+```
+
+### Project file: /tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2017", "lib": ["dom", "dom.iterable", "esnext"], "allowJs": true, "skipLibCheck": true,
+    "strict": true, "noEmit": true, "esModuleInterop": true, "module": "esnext", "moduleResolution": "bundler",
+    "resolveJsonModule": true, "isolatedModules": true, "jsx": "preserve", "incremental": true,
+    "plugins": [{ "name": "next" }], "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+### Project file: /postcss.config.mjs
+
+```js
+const config = { plugins: { "@tailwindcss/postcss": {} } };
+export default config;
+```
 
 ### Styling: /app/globals.css
 
+Replace or apply the contents of /app/globals.css with:
+
+```css
 @import "tailwindcss";
 @import "lenis/dist/lenis.css";
 
@@ -2214,9 +2491,11 @@ npm install lenis
     transition-duration: 0.01ms !important;
   }
 }
+```
 
 ### Next.js Config: /next.config.ts
 
+```tsx
 import path from "path";
 import type { NextConfig } from "next";
 
@@ -2241,9 +2520,13 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+```
 
 ### Update /app/layout.tsx:
 
+Replace the contents of /app/layout.tsx with:
+
+```tsx
 import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { CustomCursor } from "@/components/CustomCursor";
@@ -2284,9 +2567,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+```
 
 ### Update /app/page.tsx:
 
+Replace the contents of /app/page.tsx with:
+
+```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -2311,7 +2598,13 @@ export default function Page() {
   const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
-    const lenis = new Lenis();
+    const lenis = new Lenis({
+      duration: 1.1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      smoothWheel: true,
+    });
+    (window as any).__lenis = lenis;
     let raf: number;
     const tick = (time: number) => {
       lenis.raf(time);
@@ -2321,6 +2614,7 @@ export default function Page() {
     return () => {
       cancelAnimationFrame(raf);
       lenis.destroy();
+      delete (window as any).__lenis;
     };
   }, []);
 
@@ -2348,11 +2642,23 @@ export default function Page() {
     </main>
   );
 }
+```
+
+### Run
+
+```bash
+npm run dev      # http://localhost:3000
+npm run build    # must finish with "Compiled successfully" and no type errors
+```
 
 ### Rules:
-- Copy each file EXACTLY as provided
-- Do NOT modify, refactor, or rename anything
-- Do NOT change any Tailwind classes or design tokens
+- Copy each file EXACTLY as provided — character for character, including every className, inline style and number
+- Do NOT modify, refactor, rename, reformat or "improve" anything
+- Do NOT change any Tailwind classes, design tokens, colours, fonts or breakpoints
+- Do NOT add a tailwind.config.js — Tailwind v4 reads its theme from @theme in globals.css
+- Do NOT add GSAP, Framer Motion or any other animation library
 - Do NOT add external features or unnecessary abstractions
-- All 19 media assets (images + videos) are cloud-hosted via Cloudinary & GitHub Raw CDN and require no local files
-- Just create the files, install the dependencies, and the project will run with 100% fidelity
+- ScrollProgressBar and CustomCursor are mounted ONCE, in /app/layout.tsx — do not also mount them in page.tsx
+- All media assets are remote (Cloudinary + GitHub Raw CDN) — do not download or replace them
+- Use the exact dependency versions above
+- Just create the files, install the dependencies, and the project will run with 100% fidelity on mobile, tablet and desktop

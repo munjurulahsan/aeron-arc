@@ -97,7 +97,7 @@ export function Nav({ cartCount, onOpenCart }: Props) {
         </div>
 
         {/* Center: Desktop Menu Bar (Pill Capsule) */}
-        <nav className="hidden pointer-events-auto md:flex items-center gap-1 rounded-full bg-white/[0.05] p-1.5 border border-white/[0.08] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+        <nav className="hidden pointer-events-auto lg:flex items-center gap-1 rounded-full bg-white/[0.05] p-1.5 border border-white/[0.08] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
           {navLinks.map((link) => {
             const isActive = activeSection === link.href.replace("#", "");
             return (
@@ -106,7 +106,7 @@ export function Nav({ cartCount, onOpenCart }: Props) {
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
                 data-cursor="VIEW"
-                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 font-mono text-[10.5px] tracking-[0.18em] uppercase transition-all duration-200 ${
+                className={`relative flex items-center gap-1.5 rounded-full px-3 xl:px-4 py-1.5 font-mono text-[10.5px] tracking-[0.18em] uppercase transition-all duration-200 ${
                   isActive
                     ? "bg-[#D8FF3E]/15 text-[#D8FF3E] font-semibold border border-[#D8FF3E]/30 shadow-[0_0_10px_rgba(216,255,62,0.15)]"
                     : "text-[#B9BCC0] hover:text-[#F4F3EF] hover:bg-white/[0.06] border border-transparent"
@@ -144,7 +144,7 @@ export function Nav({ cartCount, onOpenCart }: Props) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex md:hidden items-center justify-center h-9 w-9 rounded-full border border-white/20 bg-white/[0.04] text-[#F4F3EF] transition-colors hover:border-[#D8FF3E]"
+            className="flex lg:hidden items-center justify-center h-9 w-9 rounded-full border border-white/20 bg-white/[0.04] text-[#F4F3EF] transition-colors hover:border-[#D8FF3E]"
             aria-label="Toggle Navigation Menu"
           >
             {mobileMenuOpen ? (
@@ -161,7 +161,7 @@ export function Nav({ cartCount, onOpenCart }: Props) {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[75] flex flex-col justify-between bg-[#080808]/95 backdrop-blur-2xl px-gutter pt-24 pb-10 text-[#F4F3EF] md:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[75] flex flex-col justify-between bg-[#080808]/95 backdrop-blur-2xl px-gutter pt-24 pb-10 text-[#F4F3EF] lg:hidden animate-in fade-in duration-200">
           <div className="flex flex-col gap-5">
             <span className="font-mono text-[10px] tracking-[0.24em] text-[#D8FF3E] uppercase">
               NAVIGATION
