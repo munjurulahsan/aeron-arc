@@ -14,6 +14,8 @@ import { Acoustics } from "@/components/Acoustics";
 import { Gallery } from "@/components/Gallery";
 import { Finishes } from "@/components/Finishes";
 import { FinalCTA } from "@/components/FinalCTA";
+import { ScrollProgressBar } from "@/components/ScrollProgressBar";
+import { CustomCursor } from "@/components/CustomCursor";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 
@@ -22,7 +24,13 @@ export default function Page() {
   const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
-    const lenis = new Lenis();
+    const lenis = new Lenis({
+      duration: 1.1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      smoothWheel: true,
+    });
+    (window as any).__lenis = lenis;
     let raf: number;
     const tick = (time: number) => {
       lenis.raf(time);
@@ -32,6 +40,7 @@ export default function Page() {
     return () => {
       cancelAnimationFrame(raf);
       lenis.destroy();
+      delete (window as any).__lenis;
     };
   }, []);
 
@@ -42,6 +51,8 @@ export default function Page() {
 
   return (
     <main>
+      <ScrollProgressBar />
+      <CustomCursor />
       <Nav cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
       <Hero onAddToCart={addToCart} />
       <Product />

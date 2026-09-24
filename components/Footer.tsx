@@ -4,21 +4,21 @@ export function Footer() {
   return (
     <footer
       data-theme="dark"
-      className="relative border-t border-white/10 bg-[#080808] px-[clamp(20px,3.65vw,56px)] pb-[34px] pt-[62.5px] text-[#F4F3EF]"
+      className="relative border-t border-white/10 bg-[#080808] px-gutter pb-8 sm:pb-[34px] pt-10 sm:pt-[62.5px] text-[#F4F3EF]"
     >
       <div className="mx-auto max-w-[1424px]">
         {/* Top Watermark & Tagline Row */}
-        <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-10 md:flex-row md:items-end">
-          <div className="select-none font-sans text-[clamp(64px,14.6vw,224px)] font-[900] leading-[0.8] tracking-[-0.05em] text-[#F4F3EF]/[0.05]">
+        <div className="flex flex-col justify-between gap-4 sm:gap-6 border-b border-white/10 pb-6 sm:pb-10 md:flex-row md:items-end">
+          <div className="select-none font-sans text-[clamp(44px,14vw,224px)] font-[900] leading-[0.8] tracking-[-0.05em] text-[#F4F3EF]/[0.05]">
             AERON
           </div>
-          <div className="pb-2 font-mono text-[11px] tracking-[0.2em] text-[#B9BCC0]">
+          <div className="pb-1 sm:pb-2 font-mono text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9BCC0]">
             SOUND, REIMAGINED.
           </div>
         </div>
 
         {/* 4-Column Navigation & Spec Grid */}
-        <div className="mt-10 grid grid-cols-2 gap-10 md:grid-cols-4 md:gap-8">
+        <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-8">
           {/* Column 1: SHOP */}
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/55 uppercase">

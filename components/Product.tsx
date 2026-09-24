@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const FEATURES = [
   {
@@ -27,47 +27,24 @@ const FEATURES = [
 ];
 
 export function Product() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("product");
 
   return (
     <section
-      ref={sectionRef}
       id="product"
       data-theme="dark"
-      className="relative overflow-hidden bg-[#0C0C0C] px-gutter py-[clamp(80px,12vh,160px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 overflow-hidden bg-[#0C0C0C] px-gutter py-12 sm:py-16 md:py-20 lg:py-28 text-[#F4F3EF]"
     >
       <div
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         {/* Eyebrow Meta: 02 —— PRODUCT */}
-        <div className="mb-[clamp(24px,4vh,44px)] flex items-center gap-[14px]">
+        <div className="mb-4 sm:mb-6 md:mb-8 flex items-center gap-[14px]">
           <span className="font-mono text-[10.5px] font-normal tracking-[0.22em] text-[#D8FF3E]">
             02
           </span>
@@ -79,18 +56,18 @@ export function Product() {
 
         {/* Section Headline & Description */}
         <div className="w-full">
-          <h2 className="m-0 font-sans text-[clamp(2.7rem,8vw,8rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.045em] text-[#F4F3EF]">
+          <h2 className="m-0 font-sans text-[clamp(2.4rem,7vw,8rem)] font-extrabold uppercase leading-[0.88] tracking-[-0.045em] text-[#F4F3EF]">
             NOT JUST
             <br />
             SOUND.
           </h2>
-          <p className="mt-[22px] max-w-[430px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+          <p className="mt-4 sm:mt-5 max-w-[430px] font-sans text-[13px] sm:text-[14px] font-normal leading-[1.65] text-[#B9BCC0]">
             AERON ARC is engineered around the way you actually experience sound — not around a spec sheet.
           </p>
         </div>
 
         {/* Middle Video Container (Using existing Section 2 video) */}
-        <div className="relative my-[clamp(32px,6vh,72px)] h-[clamp(320px,46vw,672px)] w-full overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
+        <div className="relative my-6 sm:my-8 md:my-12 aspect-[16/10] sm:aspect-[16/9] w-full max-h-[672px] overflow-hidden rounded-[16px] md:rounded-[24px] bg-[#151515]">
           <video
             autoPlay
             muted
@@ -102,7 +79,7 @@ export function Product() {
             <source src={media.section2Video} type="video/mp4" />
           </video>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0C0C0C]/70 via-transparent to-transparent" />
-          <div className="absolute bottom-6 left-6 font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E]">
+          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 font-mono text-[9px] sm:text-[10.5px] tracking-[0.2em] text-[#D8FF3E]">
             FIG 02.1 — ACTIVE TRANSDUCER
           </div>
         </div>

@@ -56,9 +56,11 @@ export const FINISHES = [
 
 export const navLinks = [
   { href: "#product", label: "PRODUCT" },
-  { href: "#technology", label: "TECHNOLOGY" },
   { href: "#experience", label: "EXPERIENCE" },
-  { href: "#support", label: "SUPPORT" },
+  { href: "#technology", label: "TECHNOLOGY" },
+  { href: "#engineering", label: "ENGINEERING" },
+  { href: "#battery", label: "POWER" },
+  { href: "#finishes", label: "FINISHES" },
 ];
 
 export const gallerySlides = [

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { explodedParts, masterPart, PART_BOUNDS } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const CALLOUTS = [
   { num: "02", title: "Outer ceramic shell", desc: "STRUCTURAL PROTECTION" },
@@ -16,6 +17,7 @@ const CALLOUTS = [
 
 export function ExplodedView() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { isVisible } = useSectionTransition("exploded", sectionRef);
   const stageRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -90,11 +92,11 @@ export function ExplodedView() {
         expNarrow = narrow;
         if (narrow) {
           zone.style.left = "0px";
-          zone.style.top = "32%";
+          zone.style.top = "28%";
           zone.style.bottom = "16%";
-          head.style.top = "clamp(84px,13vh,150px)";
+          head.style.top = "clamp(88px, 11vh, 104px)";
           head.style.transform = "none";
-          head.style.maxWidth = "92vw";
+          head.style.maxWidth = "min(92vw, 480px)";
         } else {
           zone.style.left = "clamp(0px,37vw,600px)";
           zone.style.top = "12%";
@@ -133,8 +135,8 @@ export function ExplodedView() {
         if (master) setH(master, "part-01-master");
       }
 
-      const sepRaw = clamp((p - 0.06) / 0.76, 0, 1);
-      const appear = clamp((p - 0.02) / 0.07, 0, 1);
+      const sepRaw = clamp((p - 0.05) / 0.78, 0, 1);
+      const appear = clamp(sepRaw / 0.1, 0, 1);
 
       const place = (el: HTMLElement, key: string, dx: number, dy: number) => {
         const b = PART_BOUNDS[key];
@@ -162,7 +164,7 @@ export function ExplodedView() {
       });
 
       if (master) {
-        master.style.opacity = String(clamp(1 - p / 0.07, 0, 1));
+        master.style.opacity = String(clamp(1 - sepRaw / 0.12, 0, 1));
         master.style.transform = place(master, "part-01-master", 0, 0);
       }
 
@@ -249,9 +251,10 @@ export function ExplodedView() {
   return (
     <section
       ref={sectionRef}
+      id="exploded"
       data-theme="dark"
       data-exploded
-      className="relative h-[540vh] bg-[#0B0B0B] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 h-[280vh] sm:h-[360vh] md:h-[450vh] lg:h-[540vh] bg-[#0B0B0B] text-[#F4F3EF]"
     >
       <div
         ref={stageRef}
@@ -286,7 +289,7 @@ export function ExplodedView() {
             data-part-master
             src={masterPart.src}
             alt={masterPart.alt}
-            className="absolute left-1/2 top-1/2 z-[9] -translate-x-1/2 -translate-y-1/2 max-w-none filter drop-shadow-[0_30px_48px_rgba(0,0,0,0.72)]"
+            className="absolute left-1/2 top-1/2 z-[9] max-w-none filter drop-shadow-[0_30px_48px_rgba(0,0,0,0.72)]"
             style={{ height: "26vmin", width: "auto" }}
           />
 
@@ -354,44 +357,52 @@ export function ExplodedView() {
         <div
           ref={headRef}
           data-anatomy-head
-          className="absolute left-[clamp(16px,4vw,56px)] top-1/2 z-[40] max-w-[clamp(240px,30vw,430px)] -translate-y-1/2"
+          className="absolute left-[clamp(16px,4vw,56px)] top-1/2 z-[40] max-w-[clamp(240px,30vw,430px)] pointer-events-none"
         >
-          {/* Eyebrow: 06 —— ANATOMY */}
-          <div className="mb-[22px] flex items-center gap-[14px] font-mono text-[10.5px] tracking-[0.22em] text-[#B9BCC0]">
-            <span className="text-[#D8FF3E]">06</span>
-            <span className="h-[1px] w-[54px] bg-[#B9BCC0]/40" />
-            <span>ANATOMY</span>
-          </div>
+          <div
+            className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-16 opacity-0"
+            }`}
+          >
+            {/* Eyebrow: 06 —— ANATOMY */}
+            <div className="mb-2 sm:mb-4 md:mb-[22px] flex items-center gap-[14px] font-mono text-[10px] sm:text-[10.5px] tracking-[0.22em] text-[#B9BCC0]">
+              <span className="text-[#D8FF3E]">06</span>
+              <span className="h-[1px] w-[54px] bg-[#B9BCC0]/40" />
+              <span>ANATOMY</span>
+            </div>
 
-          {/* Headline */}
-          <h2 className="m-0 font-sans text-[clamp(1.9rem,4.4vw,4.2rem)] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] text-[#F4F3EF]">
-            Every layer
-            <br />
-            has a purpose.
-          </h2>
+            {/* Headline */}
+            <h2 className="m-0 font-sans text-[clamp(1.5rem,3.8vw,4.2rem)] font-extrabold uppercase leading-[0.92] tracking-[-0.04em] text-[#F4F3EF]">
+              Every layer
+              <br />
+              has a purpose.
+            </h2>
 
-          {/* Subtitle */}
-          <p className="mt-[24px] font-mono text-[10.5px] leading-[1.9] tracking-[0.18em] text-[#B9BCC0]/85 uppercase">
-            ENGINEERED FROM
-            <br />
-            THE INSIDE OUT.
-          </p>
+            {/* Subtitle */}
+            <p className="mt-2 sm:mt-3 md:mt-[24px] font-mono text-[9.5px] sm:text-[10.5px] leading-[1.6] sm:leading-[1.9] tracking-[0.18em] text-[#B9BCC0]/85 uppercase">
+              ENGINEERED FROM
+              <br />
+              THE INSIDE OUT.
+            </p>
 
-          {/* 8 Component Step Indicator Bars */}
-          <div className="mt-[34px] flex h-[6px] items-end gap-[7px]">
-            {CALLOUTS.map((_, i) => (
-              <span
-                key={i}
-                data-part-step={i}
-                className="h-[1px] w-[15px] bg-[rgba(244,243,239,0.22)] transition-all duration-450 ease-out"
-              />
-            ))}
-          </div>
+            {/* 8 Component Step Indicator Bars */}
+            <div className="mt-2 sm:mt-4 md:mt-[34px] flex h-[6px] items-end gap-[5px] sm:gap-[7px]">
+              {CALLOUTS.map((_, i) => (
+                <span
+                  key={i}
+                  data-part-step={i}
+                  className="h-[1px] w-[12px] sm:w-[15px] bg-[rgba(244,243,239,0.22)] transition-all duration-450 ease-out"
+                />
+              ))}
+            </div>
 
-          {/* Disassembly Readout */}
-          <div className="mt-[14px] font-mono text-[10px] tracking-[0.2em] text-[#B9BCC0]/60">
-            <span ref={idxRef}>01</span> / 08 &nbsp;·&nbsp;{" "}
-            <span ref={pctRef}>000</span>% SEPARATED
+            {/* Disassembly Readout */}
+            <div className="mt-1.5 sm:mt-2 md:mt-[14px] font-mono text-[9px] sm:text-[10px] tracking-[0.2em] text-[#B9BCC0]/60">
+              <span ref={idxRef}>01</span> / 08 &nbsp;·&nbsp;{" "}
+              <span ref={pctRef}>000</span>% SEPARATED
+            </div>
           </div>
         </div>
       </div>

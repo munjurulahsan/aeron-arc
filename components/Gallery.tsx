@@ -2,74 +2,103 @@
 
 import { useEffect, useRef } from "react";
 import { gallerySlides } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
+
+const SLIDE_CONFIG = [
+  { widthClass: "w-[clamp(260px,40vw,600px)]", caption: "01 / MORNING" },
+  { widthClass: "w-[clamp(200px,28vw,420px)]", caption: "02 / MOVEMENT" },
+  { widthClass: "w-[clamp(240px,34vw,520px)]", caption: "03 / FOCUS" },
+  { widthClass: "w-[clamp(260px,40vw,600px)]", caption: "04 / NIGHT" },
+  { widthClass: "w-[clamp(240px,34vw,520px)]", caption: "05 / IMMERSION" },
+];
 
 export function Gallery() {
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const { isVisible } = useSectionTransition("gallery", sectionRef);
 
   useEffect(() => {
     const sec = sectionRef.current;
     const track = trackRef.current;
     if (!sec || !track) return;
 
+    let rafId: number;
+
     const onScroll = () => {
       const vh = window.innerHeight;
       const r = sec.getBoundingClientRect();
       const p = Math.min(Math.max(-r.top / Math.max(1, r.height - vh), 0), 1);
-      const dist = Math.max(0, track.scrollWidth - window.innerWidth + 40);
+      // Measure total overflow distance including horizontal padding
+      const dist = Math.max(0, track.scrollWidth - window.innerWidth + 56);
       track.style.transform = `translate3d(${(-p * dist).toFixed(1)}px, 0, 0)`;
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    const handleScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(onScroll);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
     onScroll();
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      data-theme="dark"
+      id="gallery"
+      data-theme="light"
       data-hgallery
-      className="relative h-[360vh] bg-[#0C0C0C] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 h-[360vh] bg-[#EAE9E4] text-[#121212]"
     >
-      <div className="sticky top-0 flex h-svh flex-col justify-between overflow-hidden px-gutter py-12">
-        <div className="flex items-center justify-between font-mono text-[11px] tracking-[0.24em] text-[#D8FF3E] uppercase">
-          <span>09 A DAY IN ARC</span>
-          <span className="text-mute">HORIZONTAL SCROLL MATRIX</span>
-        </div>
-
-        {/* Sliding Horizontal Track */}
+      <div className="sticky top-0 flex h-svh flex-col justify-center overflow-hidden">
         <div
-          ref={trackRef}
-          data-hgallery-track
-          className="flex items-center gap-8 will-change-transform"
+          className={`flex flex-col justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isVisible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-8 opacity-0"
+          }`}
         >
-          {gallerySlides.map((slide) => (
-            <div
-              key={slide.id}
-              className="relative aspect-[16/10] w-[clamp(320px,68vw,780px)] flex-shrink-0 overflow-hidden rounded-2xl bg-[#151515]"
-            >
-              <img
-                src={slide.img}
-                alt={slide.title}
-                className="h-full w-full object-cover filter brightness-[0.82] contrast-[1.05]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <span className="font-mono text-xs text-[#D8FF3E]">{slide.tag}</span>
-                <h3 className="mt-1 font-sans text-xl font-bold sm:text-2xl">{slide.title}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
+          {/* Eyebrow Header: 09 —— A DAY IN ARC (Figma / white.html match) */}
+          <div className="mb-[clamp(20px,3vh,36px)] flex items-center gap-3.5 px-[clamp(16px,4vw,56px)] font-mono text-[10.5px] tracking-[0.22em] text-[#55554F]">
+            <span className="text-[#121212]">09</span>
+            <span className="h-[1px] w-[54px] bg-[#121212]/30" />
+            <span>A DAY IN ARC</span>
+          </div>
 
-        <div className="font-mono text-[10px] tracking-widest text-mute">
-          DRAG OR SCROLL VERTICALLY TO SCRUB
+          {/* Horizontal Editorial Track */}
+          <div
+            ref={trackRef}
+            data-hgallery-track
+            className="flex items-center gap-[clamp(14px,2vw,32px)] px-[clamp(16px,4vw,56px)] will-change-transform"
+          >
+            {gallerySlides.map((slide, i) => {
+              const cfg = SLIDE_CONFIG[i % SLIDE_CONFIG.length];
+              return (
+                <figure
+                  key={slide.id}
+                  className={`m-0 flex-none ${cfg.widthClass}`}
+                >
+                  <div className="h-[clamp(300px,54svh,620px)] overflow-hidden bg-[#141414]">
+                    <img
+                      src={slide.img}
+                      alt={slide.title}
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+                    />
+                  </div>
+                  <figcaption className="mt-3.5 font-mono text-[10.5px] tracking-[0.2em] text-[#55554F]">
+                    {cfg.caption}
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

@@ -1,40 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Precision() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("engineering");
 
   return (
     <section
-      ref={sectionRef}
       id="engineering"
       data-theme="dark"
-      className="relative min-h-[875px] overflow-hidden bg-[#151515] px-gutter py-[clamp(64px,9vh,97px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 overflow-hidden bg-[#151515] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 lg:min-h-[875px] text-[#F4F3EF]"
     >
       {/* Background Architectural Ray / Stage Image from Figma */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -47,10 +23,11 @@ export function Precision() {
       </div>
 
       <div
-        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`relative z-10 mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         {/* Top Header: Eyebrow + Built with Precision */}
@@ -77,21 +54,21 @@ export function Precision() {
         </div>
 
         {/* Center Showcase: Specs on Left, Macro Product in Center, Specs on Right */}
-        <div className="mt-[clamp(40px,7vh,90px)] grid items-center gap-8 lg:grid-cols-12">
+        <div className="mt-8 sm:mt-12 lg:mt-[clamp(40px,7vh,90px)] grid items-center gap-8 lg:grid-cols-12">
           {/* Left Column: Spec 01 & Spec 02 */}
-          <div className="flex flex-col gap-10 lg:col-span-4">
+          <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 lg:col-span-4">
             {/* Spec 01: Titanium acoustic chamber */}
             <div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
                   01
                 </span>
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
                   TITANIUM ACOUSTIC CHAMBER
                 </span>
                 <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
               </div>
-              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
                 0.4 mm walls, vacuum-sealed. Resonance measured in single decibels.
               </p>
             </div>
@@ -102,20 +79,20 @@ export function Precision() {
                 <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
                   02
                 </span>
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
                   ADAPTIVE DRIVER
                 </span>
                 <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
               </div>
-              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85">
                 11 mm dual-layer diaphragm that stiffens under load.
               </p>
             </div>
           </div>
 
           {/* Center Column: Macro Floating Earbuds Image from Figma */}
-          <div className="flex justify-center lg:col-span-4">
-            <div className="relative w-full max-w-[444px]">
+          <div className="my-2 flex justify-center lg:my-0 lg:col-span-4">
+            <div className="relative w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[444px]">
               <img
                 src={media.precisionMacro}
                 alt="AERON ARC Precision Engineering"
@@ -125,35 +102,41 @@ export function Precision() {
           </div>
 
           {/* Right Column: Spec 03 & Spec 04 */}
-          <div className="flex flex-col gap-10 lg:col-span-4 lg:items-end">
+          <div className="flex flex-col gap-6 sm:gap-8 lg:gap-10 lg:col-span-4 lg:items-end">
             {/* Spec 03: Micro sensor array */}
-            <div className="w-full lg:text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+            <div className="w-full text-left lg:text-right">
+              <div className="flex items-center justify-start gap-3 lg:justify-end">
+                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block lg:order-1" />
+                <span className="lg:hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                  03
+                </span>
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF] lg:order-2">
                   MICRO SENSOR ARRAY
                 </span>
-                <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                <span className="hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E] lg:inline lg:order-3">
                   03
                 </span>
               </div>
-              <p className="mt-2 max-w-[280px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pr-[26px]">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pl-0 lg:pr-[26px]">
                 Six-axis motion, optical wear detection, bone conduction pickup.
               </p>
             </div>
 
             {/* Spec 04: Ceramic composite shell */}
-            <div className="w-full lg:text-right">
-              <div className="flex items-center justify-end gap-3">
-                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block" />
-                <span className="font-sans text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF]">
+            <div className="w-full text-left lg:text-right">
+              <div className="flex items-center justify-start gap-3 lg:justify-end">
+                <span className="hidden h-[1px] flex-1 bg-[#F4F3EF]/20 sm:block lg:order-1" />
+                <span className="lg:hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                  04
+                </span>
+                <span className="font-sans text-[13px] sm:text-[14px] font-bold uppercase tracking-[0.06em] text-[#F4F3EF] lg:order-2">
                   CERAMIC COMPOSITE SHELL
                 </span>
-                <span className="font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E]">
+                <span className="hidden font-mono text-[10.5px] font-normal tracking-[0.2em] text-[#D8FF3E] lg:inline lg:order-3">
                   04
                 </span>
               </div>
-              <p className="mt-2 max-w-[280px] font-sans text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pr-[26px]">
+              <p className="mt-2 max-w-[280px] pl-[26px] font-sans text-[12px] sm:text-[12.5px] font-normal leading-[1.65] text-[#B9BCC0]/85 lg:ml-auto lg:pl-0 lg:pr-[26px]">
                 Scratch-hardened to 8H. Warm to the touch within seconds.
               </p>
             </div>

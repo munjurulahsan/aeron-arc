@@ -12,30 +12,8 @@ export function Hero({ onAddToCart }: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50);
-
-    const el = sectionRef.current;
-    if (!el) return () => clearTimeout(timer);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
+    const timer = setTimeout(() => setIsVisible(true), 60);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -43,7 +21,7 @@ export function Hero({ onAddToCart }: HeroProps) {
       ref={sectionRef}
       id="top"
       data-theme="dark"
-      className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-[clamp(24px,4vh,48px)] pt-[clamp(96px,14vh,160px)] text-[#F4F3EF]"
+      className="relative flex min-h-svh w-full flex-col justify-between overflow-hidden bg-[#080808] px-gutter pb-6 sm:pb-8 md:pb-12 pt-[clamp(80px,12vh,140px)] text-[#F4F3EF]"
     >
       {/* Background Cloudinary Video */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -73,15 +51,15 @@ export function Hero({ onAddToCart }: HeroProps) {
 
       {/* Main Headline Group (Unified with controlled, tighter spacing) */}
       <div
-        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        className={`relative z-10 my-auto flex w-full flex-col select-none py-2 md:py-4 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.97]"
         }`}
       >
         {/* Line 1: SOUND, (Left-aligned) */}
         <div data-hero-type="left" className="w-full">
-          <h1 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
+          <h1 className="m-0 font-sans text-[clamp(2.4rem,8.8vw,10.5rem)] font-extrabold uppercase leading-[0.85] tracking-[-0.045em] text-[#F4F3EF]">
             SOUND,
           </h1>
         </div>
@@ -89,9 +67,9 @@ export function Hero({ onAddToCart }: HeroProps) {
         {/* Line 2: REIMAGINED. (Close spacing to Line 1 + offset horizontally to x=527px) */}
         <div
           data-hero-type="right"
-          className="mt-[clamp(12px,3vw,40px)] md:ml-[clamp(40px,28vw,470px)]"
+          className="mt-2 sm:mt-[clamp(8px,2.5vw,36px)] md:ml-[clamp(40px,28vw,470px)]"
         >
-          <h2 className="m-0 font-sans text-[clamp(2.6rem,9.4vw,10.5rem)] font-extrabold uppercase leading-[0.84] tracking-[-0.045em] text-[#F4F3EF]">
+          <h2 className="m-0 font-sans text-[clamp(2.4rem,8.8vw,10.5rem)] font-extrabold uppercase leading-[0.85] tracking-[-0.045em] text-[#F4F3EF]">
             REIMAGINED.
           </h2>
         </div>
@@ -99,10 +77,10 @@ export function Hero({ onAddToCart }: HeroProps) {
 
       {/* Bottom Row: Meta, CTAs & Scroll Indicator */}
       <div
-        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-7 pt-4 transition-all duration-[1600ms] delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        className={`relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-5 sm:gap-7 pt-4 transition-all duration-1000 delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.97]"
         }`}
       >
         {/* Left Column */}
@@ -124,6 +102,18 @@ export function Hero({ onAddToCart }: HeroProps) {
           <div className="flex flex-wrap items-center gap-3">
             <a
               href="#product"
+              onClick={(e) => {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent("aeron:navigate", { detail: { targetId: "product" } }));
+                const target = document.querySelector("#product");
+                if (target) {
+                  if (typeof window !== "undefined" && (window as any).__lenis) {
+                    (window as any).__lenis.scrollTo(target, { offset: -80, duration: 1.1 });
+                  } else {
+                    target.scrollIntoView({ behavior: "smooth" });
+                  }
+                }
+              }}
               data-cursor="EXPLORE"
               data-magnetic
               className="inline-flex items-center justify-center rounded-full bg-[#F4F3EF] px-[26px] py-[15px] font-mono text-[11px] font-medium tracking-[0.16em] text-[#080808] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"

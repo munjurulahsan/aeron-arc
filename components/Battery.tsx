@@ -2,34 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Battery() {
   const barRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, elementRef: contentRef } = useSectionTransition("battery");
 
   useEffect(() => {
     const onScroll = () => {
@@ -49,19 +27,22 @@ export function Battery() {
 
   return (
     <section
-      ref={sectionRef}
+      id="battery"
       data-theme="light"
-      className="relative bg-[#F4F3EF] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#080808]"
+      className="relative scroll-mt-20 md:scroll-mt-24 bg-[#F4F3EF] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 text-[#080808]"
     >
       <div
-        ref={containerRef}
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={(el) => {
+          if (containerRef) (containerRef as any).current = el;
+          if (contentRef) (contentRef as any).current = el;
+        }}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="grid grid-cols-1 items-center gap-8 sm:gap-12 lg:grid-cols-12 lg:gap-16">
           {/* Left Column */}
           <div className="lg:col-span-7">
             {/* Eyebrow */}

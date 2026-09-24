@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 const systems = [
   {
@@ -26,42 +26,20 @@ const systems = [
 ];
 
 export function Acoustics() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, sectionRef } = useSectionTransition("intelligence");
 
   return (
     <section
-      ref={sectionRef}
+      id="intelligence"
       data-theme="dark"
-      className="relative bg-[#080808] px-[clamp(20px,3.65vw,56px)] py-[clamp(64px,6.34vw,97px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 bg-[#080808] px-gutter py-12 sm:py-16 md:py-20 lg:py-24 text-[#F4F3EF]"
     >
       <div
-        className={`mx-auto max-w-[1424px] transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={sectionRef}
+        className={`mx-auto max-w-[1424px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         {/* Eyebrow */}
@@ -76,33 +54,33 @@ export function Acoustics() {
         </div>
 
         {/* Header Row */}
-        <div className="mt-8 grid grid-cols-1 items-end gap-6 lg:grid-cols-12">
+        <div className="mt-6 sm:mt-8 grid grid-cols-1 items-end gap-4 sm:gap-6 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <h2 className="font-sans text-[clamp(44px,6.25vw,96px)] font-[800] leading-[1.05] tracking-[-0.055em] text-[#F4F3EF]">
+            <h2 className="font-sans text-[clamp(32px,5.8vw,96px)] font-[800] leading-[1.05] tracking-[-0.055em] text-[#F4F3EF]">
               It listens with you.
             </h2>
           </div>
           <div className="lg:col-span-5 lg:pb-3 lg:pl-8">
-            <p className="max-w-[340px] font-sans text-[14px] leading-[1.7] text-[#B9BCC0]">
+            <p className="max-w-[340px] font-sans text-[13px] sm:text-[14px] leading-[1.65] text-[#B9BCC0]">
               Four systems running quietly in the background, adjusting the sound before you notice it needed adjusting.
             </p>
           </div>
         </div>
 
         {/* 4 Systems Rows */}
-        <div className="mt-14 border-t border-white/10">
+        <div className="mt-8 sm:mt-12 md:mt-14 border-t border-white/10">
           {systems.map((s) => (
             <div
               key={s.id}
-              className="grid grid-cols-1 items-center gap-3 border-b border-white/10 py-7 transition-colors hover:bg-white/[0.02] md:grid-cols-12"
+              className="grid grid-cols-1 items-baseline sm:items-center gap-2 sm:gap-3 border-b border-white/10 py-4 sm:py-5 md:py-7 transition-colors hover:bg-white/[0.02] md:grid-cols-12"
             >
               <div className="font-mono text-[10.5px] tracking-[0.2em] text-[#D8FF3E] md:col-span-1">
                 {s.id}
               </div>
-              <div className="font-sans text-[clamp(22px,2.2vw,32px)] font-[700] tracking-[-0.02em] text-[#F4F3EF] md:col-span-5">
+              <div className="font-sans text-[clamp(18px,2.2vw,32px)] font-[700] tracking-[-0.02em] text-[#F4F3EF] md:col-span-5">
                 {s.title}
               </div>
-              <div className="font-sans text-[12.5px] leading-[1.7] text-[#B9BCC0]/85 md:col-span-6">
+              <div className="font-sans text-[12px] sm:text-[12.5px] leading-[1.65] text-[#B9BCC0]/85 md:col-span-6">
                 {s.desc}
               </div>
             </div>

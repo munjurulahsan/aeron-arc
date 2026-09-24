@@ -2,34 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { media } from "@/lib/content";
+import { useSectionTransition } from "@/hooks/useSectionTransition";
 
 export function Technology() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLImageElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -120px 0px",
-      }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const { isVisible, elementRef: contentRef } = useSectionTransition("technology");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -124,7 +103,7 @@ export function Technology() {
       id="technology"
       data-theme="dark"
       ref={containerRef}
-      className="relative h-[712px] min-h-[640px] xl:h-[712px] overflow-hidden bg-[#080808] px-gutter py-[clamp(48px,8vh,84px)] text-[#F4F3EF]"
+      className="relative scroll-mt-20 md:scroll-mt-24 min-h-[460px] sm:min-h-[540px] md:min-h-[620px] lg:h-[712px] overflow-hidden bg-[#080808] px-gutter py-12 sm:py-16 md:py-20 lg:py-[clamp(48px,8vh,84px)] text-[#F4F3EF] flex flex-col justify-between"
     >
       {/* Figma Exact Background Image (Node 1:265) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -147,10 +126,11 @@ export function Technology() {
 
       {/* Content Container (Figma Node 1:266) */}
       <div
-        className={`relative z-[2] mx-auto flex h-full max-w-[1424px] flex-col justify-between transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
+        ref={contentRef}
+        className={`relative z-[2] mx-auto flex h-full w-full max-w-[1424px] flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity] ${
           isVisible
             ? "translate-y-0 opacity-100 scale-100"
-            : "translate-y-36 opacity-0 scale-[0.92]"
+            : "translate-y-16 opacity-0 scale-[0.98]"
         }`}
       >
         {/* Top Block: Eyebrow + 3-line Stacked Headline */}
@@ -167,8 +147,8 @@ export function Technology() {
           </div>
 
           {/* Headline (Figma Node 1:276 - exactly 532px max width) */}
-          <div className="mt-[34px] max-w-[532px]">
-            <h2 className="m-0 font-sans text-[clamp(42px,6.25vw,96px)] font-extrabold uppercase leading-[1.12] tracking-[-0.06em] text-[#F4F3EF]">
+          <div className="mt-5 sm:mt-7 md:mt-[34px] max-w-[532px]">
+            <h2 className="m-0 font-sans text-[clamp(32px,5.8vw,96px)] font-extrabold uppercase leading-[1.08] tracking-[-0.05em] text-[#F4F3EF]">
               SOUND
               <br />
               WITHOUT
@@ -179,12 +159,12 @@ export function Technology() {
         </div>
 
         {/* Bottom Block: Description + Move Cursor Hint */}
-        <div className="flex flex-wrap items-end justify-between gap-6 pt-6">
-          <p className="m-0 max-w-[400px] font-sans text-[14px] font-normal leading-[1.7] text-[#B9BCC0]">
+        <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-6 pt-6 sm:pt-8">
+          <p className="m-0 max-w-[400px] font-sans text-[13px] sm:text-[14px] font-normal leading-[1.65] text-[#B9BCC0]">
             AERON ARC creates a dimensional soundstage that responds naturally to your movement. Turn your head and the room stays where it is.
           </p>
 
-          <div className="font-mono text-[10px] font-normal uppercase leading-[2.1] tracking-[0.18em] text-[#B9BCC0]/60 text-right">
+          <div className="font-mono text-[9.5px] sm:text-[10px] font-normal uppercase leading-[1.8] sm:leading-[2.1] tracking-[0.18em] text-[#B9BCC0]/60 sm:text-right">
             MOVE YOUR CURSOR
             <br />
             TO SHIFT THE FIELD
